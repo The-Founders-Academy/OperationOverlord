@@ -4,6 +4,7 @@ import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.geometry.Pose2d;
 import com.arcrobotics.ftclib.geometry.Rotation2d;
+import com.arcrobotics.ftclib.kinematics.wpilibkinematics.ChassisSpeeds;
 
 public class Drivetrain extends SubsystemBase {
     private MecanumDrive m_mecanumDrive;
@@ -20,7 +21,12 @@ public class Drivetrain extends SubsystemBase {
         }
     }
 
-    public void drive(double strafeSpeed, double forwardSpeed, double rotationalSpeed, double robotAngle) {
-        m_mecanumDrive.driveFieldCentric(strafeSpeed, forwardSpeed, rotationalSpeed, robotAngle);
+    public void drive(ChassisSpeeds chasisSpeeds) {
+
     }
+
+    public Pose2d getRobotPose() {
+        return m_robotPose;
+    }
+
 }
