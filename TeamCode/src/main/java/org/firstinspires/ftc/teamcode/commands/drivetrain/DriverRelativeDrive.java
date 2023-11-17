@@ -4,7 +4,7 @@ import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.kinematics.wpilibkinematics.ChassisSpeeds;
 
-import org.firstinspires.ftc.teamcode.Constants;
+import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.subsystems.Drivetrain;
 
 public class DriverRelativeDrive extends CommandBase {
@@ -25,7 +25,6 @@ public class DriverRelativeDrive extends CommandBase {
 
     @Override
     public void execute() {
-        ChassisSpeeds chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(vX * Constants.DrivetrainConstants.MaxLinearVelocityMetersPerSecond, vY * Constants.DrivetrainConstants.MaxLinearVelocityMetersPerSecond, omegaRadiansPerSecond * Constants.DrivetrainConstants.MaxAngularVeloityRadiansPerSecond, m_drivetrain.getRobotPose().getRotation());
-        m_drivetrain.drive(chassisSpeeds);
+        m_drivetrain.moveFieldRelative(vX * DrivetrainConstants.MaxStrafeVelocityMetersPerSecond, vY * DrivetrainConstants.MaxForwardVelocityMetersPerSecond, omegaRadiansPerSecond * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond);
     }
 }

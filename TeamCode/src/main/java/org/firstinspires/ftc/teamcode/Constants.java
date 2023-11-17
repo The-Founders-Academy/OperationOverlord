@@ -2,7 +2,8 @@ package org.firstinspires.ftc.teamcode;
 
 public class Constants {
     public static class DrivetrainConstants {
-        public static final double MaxLinearVelocityMetersPerSecond = 0;
+        public static final double MaxStrafeVelocityMetersPerSecond = 0;
+        public static final double MaxForwardVelocityMetersPerSecond = 0;
         public static final double MaxAngularVeloityRadiansPerSecond = 0;
     }
 
