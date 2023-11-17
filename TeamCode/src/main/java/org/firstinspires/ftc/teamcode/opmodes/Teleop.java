@@ -7,7 +7,7 @@ import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.commands.drivetrain.FieldRelativeDrive;
+import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
 import org.firstinspires.ftc.teamcode.subsystems.Drivetrain;
 
 @TeleOp(name="TeleOp")
@@ -20,9 +20,7 @@ public class Teleop extends CommandOpMode {
     private Motor fL, fR, bL, bR;
 
     private void driverControls() {
-        // Driver
-        drivetrain.setDefaultCommand(new FieldRelativeDrive(drivetrain, driver));
-
+        drivetrain.setDefaultCommand(new DriverRelativeDrive(drivetrain, driver));
     }
 
     @Override
@@ -35,7 +33,7 @@ public class Teleop extends CommandOpMode {
         bL = new Motor(hardwareMap, "bL");
         bR = new Motor(hardwareMap, "bR");
 
-        drivetrain = new Drivetrain(new MecanumDrive(fL, fR, bL, bR), null);
+        drivetrain = new Drivetrain(fL, fR, bL, bR, null);
         driverControls();
     }
 
