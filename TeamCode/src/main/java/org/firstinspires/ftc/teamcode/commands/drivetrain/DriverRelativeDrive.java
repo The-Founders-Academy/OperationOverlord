@@ -2,10 +2,8 @@ package org.firstinspires.ftc.teamcode.commands.drivetrain;
 
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import com.arcrobotics.ftclib.kinematics.wpilibkinematics.ChassisSpeeds;
 
-import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
-import org.firstinspires.ftc.teamcode.subsystems.Drivetrain;
+import org.firstinspires.ftc.teamcode.subsystems.drivetrain.Drivetrain;
 
 public class DriverRelativeDrive extends CommandBase {
 
@@ -25,6 +23,6 @@ public class DriverRelativeDrive extends CommandBase {
 
     @Override
     public void execute() {
-        m_drivetrain.moveFieldRelative(vX * DrivetrainConstants.MaxStrafeVelocityMetersPerSecond, vY * DrivetrainConstants.MaxForwardVelocityMetersPerSecond, omegaRadiansPerSecond * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond);
+        m_drivetrain.moveFieldRelative(vX, vY, omegaRadiansPerSecond);
     }
 }

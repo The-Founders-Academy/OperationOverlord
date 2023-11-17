@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.subsystems;
+package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
@@ -12,7 +12,10 @@ import com.arcrobotics.ftclib.kinematics.HolonomicOdometry;
 import com.arcrobotics.ftclib.kinematics.Odometry;
 import com.arcrobotics.ftclib.kinematics.wpilibkinematics.ChassisSpeeds;
 
+import org.firstinspires.ftc.teamcode.Constants;
+import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.Constants.OdometryConstants;
+import org.firstinspires.ftc.teamcode.UtilFunctions;
 
 public class Drivetrain extends SubsystemBase {
     private MecanumDrive m_mecanumDrive;
@@ -22,9 +25,9 @@ public class Drivetrain extends SubsystemBase {
     private Encoder m_rightOdometer;
 
     // These values need to be tuned when we have access to the drivetrain.
-    private PIDFController m_strafeSpeedController = new PIDFController(0, 0, 0, 0);
-    private PIDFController m_forwardSpeedController = new PIDFController(0, 0 ,0, 0);
-    private PIDFController m_rotationalSpeedController = new PIDFController(0, 0, 0, 0);
+    private PIDFController m_xPID = new PIDFController(0, 0, 0, 0);
+    private PIDFController m_yPID = new PIDFController(0, 0 ,0, 0);
+    private PIDFController m_angleRadiansPID = new PIDFController(0, 0, 0, 0);
 
 
     private Pose2d m_robotPose;
@@ -64,20 +67,46 @@ public class Drivetrain extends SubsystemBase {
             m_mecanumDrive.stop();
             return;
         }
-
-        m_strafeSpeedController.setSetPoint(strafeSpeed);
-        m_mecanumDrive.driveFieldCentric(strafeSpeed, forwardSpeed, omegaRadiansPerSecond, m_robotPose.getRotation().getDegrees());
+        m_mecanumDrive.driveFieldCentric(strafeSpeed * DrivetrainConstants.MaxStrafeVelocityFeetPerSecond, forwardSpeed * DrivetrainConstants.MaxForwardVelocityFeetPerSecond, omegaRadiansPerSecond * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond, m_robotPose.getRotation().getDegrees());
     }
-
 
     public Pose2d getRobotPose() {
         return m_robotPose;
     }
 
+    public void setTarget(Pose2d target) {
+        m_xPID.setSetPoint(target.getX());
+        m_yPID.setSetPoint(target.getY());
+        m_angleRadiansPID.setSetPoint(target.getRotation().getRadians());
+    }
+
+    public void resetPIDs() {
+        m_xPID.reset();
+        m_yPID.reset();
+        m_angleRadiansPID.reset();
+
+    }
+
+    public void moveToTarget() {
+        double x = UtilFunctions.clamp(m_xPID.calculate(), -1, 1); // This may need to be altered to prevent overpowering the motors
+        double y = UtilFunctions.clamp(m_yPID.calculate(), -1, 1); // This may need to be altered to prevent overpowering the motors
+        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPID.calculate(), -1, 1); // This may need to be altered to prevent overpowering the motors
+        moveFieldRelative(x, y, omegaRadiansPerSecond);
+    }
+
+    public boolean atTarget() {
+        boolean atTranslation = m_xPID.getPositionError() < DrivetrainConstants.MaxTranslationError && m_yPID.getPositionError() < DrivetrainConstants.MaxTranslationError;
+        boolean atRotation = m_angleRadiansPID.getPositionError() < DrivetrainConstants.MaxRotationError;
+
+        if(atTranslation == true && atRotation == true) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public void periodic() {
-
-
         m_odometry.updatePose();
         m_robotPose = m_odometry.getPose();
     }

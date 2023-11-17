@@ -2,13 +2,12 @@ package org.firstinspires.ftc.teamcode.opmodes;
 
 import com.arcrobotics.ftclib.command.CommandOpMode;
 import com.arcrobotics.ftclib.command.CommandScheduler;
-import com.arcrobotics.ftclib.drivebase.MecanumDrive;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
-import org.firstinspires.ftc.teamcode.subsystems.Drivetrain;
+import org.firstinspires.ftc.teamcode.subsystems.drivetrain.Drivetrain;
 
 @TeleOp(name="TeleOp")
 public class Teleop extends CommandOpMode {
@@ -21,6 +20,12 @@ public class Teleop extends CommandOpMode {
 
     private void driverControls() {
         drivetrain.setDefaultCommand(new DriverRelativeDrive(drivetrain, driver));
+        // Score / release game piece
+    }
+
+    private void operatorControls() {
+        // Move arm to pose
+        // Intake
     }
 
     @Override
