@@ -25,9 +25,9 @@ public class Drivetrain extends SubsystemBase {
     private Encoder m_rightOdometer;
 
     // These values need to be tuned when we have access to the drivetrain.
-    private PIDFController m_xPID = new PIDFController(0, 0, 0, 0);
-    private PIDFController m_yPID = new PIDFController(0, 0 ,0, 0);
-    private PIDFController m_angleRadiansPID = new PIDFController(0, 0, 0, 0);
+    private PIDFController m_xPIDF = new PIDFController(0, 0, 0, 0);
+    private PIDFController m_yPIDF = new PIDFController(0, 0 ,0, 0);
+    private PIDFController m_angleRadiansPIDF = new PIDFController(0, 0, 0, 0);
 
 
     private Pose2d m_robotPose;
@@ -63,7 +63,7 @@ public class Drivetrain extends SubsystemBase {
 
     public void moveFieldRelative(double strafeSpeed, double forwardSpeed, double omegaRadiansPerSecond) {
         // We will want to switch this to check if the speeds are under a certain threshold, since joystick drift will likely always give us some small values for each speed.
-        if(strafeSpeed == 0 || forwardSpeed == 0 || omegaRadiansPerSecond == 0) {
+        if(strafeSpeed == 0 && forwardSpeed == 0 && omegaRadiansPerSecond == 0) {
             m_mecanumDrive.stop();
             return;
         }
@@ -75,28 +75,28 @@ public class Drivetrain extends SubsystemBase {
     }
 
     public void setTarget(Pose2d target) {
-        m_xPID.setSetPoint(target.getX());
-        m_yPID.setSetPoint(target.getY());
-        m_angleRadiansPID.setSetPoint(target.getRotation().getRadians());
+        m_xPIDF.setSetPoint(target.getX());
+        m_yPIDF.setSetPoint(target.getY());
+        m_angleRadiansPIDF.setSetPoint(target.getRotation().getRadians());
     }
 
     public void resetPIDs() {
-        m_xPID.reset();
-        m_yPID.reset();
-        m_angleRadiansPID.reset();
+        m_xPIDF.reset();
+        m_yPIDF.reset();
+        m_angleRadiansPIDF.reset();
 
     }
 
     public void moveToTarget() {
-        double x = UtilFunctions.clamp(m_xPID.calculate(), -1, 1); // This may need to be altered to prevent overpowering the motors
-        double y = UtilFunctions.clamp(m_yPID.calculate(), -1, 1); // This may need to be altered to prevent overpowering the motors
-        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPID.calculate(), -1, 1); // This may need to be altered to prevent overpowering the motors
+        double x = UtilFunctions.clamp(m_xPIDF.calculate(getRobotPose().getX()), -1, 1); // This may need to be altered to prevent overpowering the motors
+        double y = UtilFunctions.clamp(m_yPIDF.calculate(getRobotPose().getY()), -1, 1); // This may need to be altered to prevent overpowering the motors
+        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(m_robotPose.getRotation().getRadians()), -1, 1); // This may need to be altered to prevent overpowering the motors
         moveFieldRelative(x, y, omegaRadiansPerSecond);
     }
 
     public boolean atTarget() {
-        boolean atTranslation = m_xPID.getPositionError() < DrivetrainConstants.MaxTranslationError && m_yPID.getPositionError() < DrivetrainConstants.MaxTranslationError;
-        boolean atRotation = m_angleRadiansPID.getPositionError() < DrivetrainConstants.MaxRotationError;
+        boolean atTranslation = m_xPIDF.getPositionError() < DrivetrainConstants.MaxTranslationError && m_yPIDF.getPositionError() < DrivetrainConstants.MaxTranslationError;
+        boolean atRotation = m_angleRadiansPIDF.getPositionError() < DrivetrainConstants.MaxRotationError;
 
         if(atTranslation == true && atRotation == true) {
             return true;
