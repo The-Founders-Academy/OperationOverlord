@@ -45,5 +45,13 @@ public class Teleop extends CommandOpMode {
     @Override
     public void run() {
         CommandScheduler.getInstance().run();
+        
+        //Telemtry
+        //telemetry.addData("robotPoseX", Drivetrain.getRobotPoseX());
+        //telemetry.addData("robotPoseY", Drivetrain.getRobotPoseY());
+        //telemetry.addData("headingDegrees", Drivetrain.getRobotPoseDegrees);
+        //telemetry.update();
+
+        // Telemetry Update Code listed above in comment form
     }
 }
