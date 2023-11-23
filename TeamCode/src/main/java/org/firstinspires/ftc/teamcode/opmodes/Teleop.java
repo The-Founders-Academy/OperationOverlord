@@ -3,11 +3,15 @@ package org.firstinspires.ftc.teamcode.opmodes;
 import com.arcrobotics.ftclib.command.CommandOpMode;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
-import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.gamepad.GamepadKeys;
+import com.arcrobotics.ftclib.geometry.Pose2d;
+import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.commands.drivetrain.DriveToPosition;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
-import org.firstinspires.ftc.teamcode.subsystems.drivetrain.Drivetrain;
+import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
+import org.firstinspires.ftc.teamcode.utility.AllianceSingleton;
 
 @TeleOp(name="TeleOp")
 public class Teleop extends CommandOpMode {
@@ -15,12 +19,15 @@ public class Teleop extends CommandOpMode {
     private GamepadEx driver;
     private GamepadEx operator;
 
-    private Drivetrain drivetrain;
-    private Motor fL, fR, bL, bR;
+    private MecanumDrivetrain drivetrain;
 
     private void driverControls() {
         drivetrain.setDefaultCommand(new DriverRelativeDrive(drivetrain, driver));
-        // Score / release game piece
+
+        // When the driver presses the A button, drive forward 1 meter. We can use this to test odometry.
+        driver.getGamepadButton(GamepadKeys.Button.A).whenPressed(new DriveToPosition(drivetrain, new Pose2d(1, 0, new Rotation2d(0)), 0.03));
+        // Score
+        // Shoot airplane
     }
 
     private void operatorControls() {
@@ -30,15 +37,11 @@ public class Teleop extends CommandOpMode {
 
     @Override
     public void initialize() {
+        AllianceSingleton.getInstance().setAlliance(AllianceSingleton.Alliance.BLUE);
         driver = new GamepadEx(gamepad1);
         operator = new GamepadEx(gamepad2);
 
-        fL = new Motor(hardwareMap, "fL");
-        fR = new Motor(hardwareMap, "fR");
-        bL = new Motor(hardwareMap, "bL");
-        bR = new Motor(hardwareMap, "bR");
-
-        drivetrain = new Drivetrain(fL, fR, bL, bR, null);
+        drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
         driverControls();
     }
 

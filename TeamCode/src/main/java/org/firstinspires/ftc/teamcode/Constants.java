@@ -1,12 +1,20 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.arcrobotics.ftclib.geometry.Rotation2d;
+import com.arcrobotics.ftclib.geometry.Translation2d;
+
 public class Constants {
     public static class DrivetrainConstants {
-        public static final double MaxStrafeVelocityFeetPerSecond = 0;
-        public static final double MaxForwardVelocityFeetPerSecond = 0;
-        public static final double MaxAngularVeloityRadiansPerSecond = 0;
+        public static final double MaxRobotSpeedMetersPerSecond = 3;
+        public static final double MaxAngularVeloityRadiansPerSecond = Math.PI;
         public static final double MaxTranslationError = 0; // CHANGE THIS
         public static final double MaxRotationError = 0; // CHANGE THIS
+        public static final Rotation2d AnglePIDTolerance = Rotation2d.fromDegrees(3.0);
+        public static final Translation2d FrontLeftMotorLocation = new Translation2d(0, 0);
+        public static final Translation2d FrontRightMotorLocation = new Translation2d(0, 0);
+        public static final Translation2d BackLeftMotorLocation = new Translation2d(0, 0);
+        public static final Translation2d BackRightMotorLocation = new Translation2d(0, 0);
+        public static final double TranslationToleranceMeters = 0.03; // 3 millimeters of permissible error. Tune later if needed
     }
 
     public static class OdometryConstants {
