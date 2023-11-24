@@ -6,6 +6,7 @@ import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
 import com.arcrobotics.ftclib.geometry.Rotation2d;
+import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 import com.arcrobotics.ftclib.kinematics.wpilibkinematics.ChassisSpeeds;
 import com.arcrobotics.ftclib.kinematics.wpilibkinematics.MecanumDriveKinematics;
@@ -37,10 +38,10 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
         // Initialize hardware
-        m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName));
-        m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName));
-        m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName));
-        m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName));
+        m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
+        m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
+        m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
+        m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
         m_imu = hardwareMap.get(IMU.class, "imu");
         m_imu.initialize(
                 new IMU.Parameters(
