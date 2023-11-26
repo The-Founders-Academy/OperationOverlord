@@ -18,10 +18,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
 import org.firstinspires.ftc.teamcode.utility.AllianceSingleton;
-
+import org.firstinspires.ftc.teamcode.utility.AllianceSingleton.Alliance;
 public class MecanumDrivetrain extends SubsystemBase {
     private MecanumMotor m_frontLeft, m_frontRight, m_backLeft, m_backRight;
     private MecanumDriveKinematics m_kinematics;
@@ -36,6 +37,20 @@ public class MecanumDrivetrain extends SubsystemBase {
     private PIDFController m_yPIDF = new PIDFController(1, 0 ,0, 0);
     private PIDFController m_angleRadiansPIDF = new PIDFController(1, 0, 0, 0);
 
+    /*
+    A quick explanation:
+    This is what's called a ternary conditional operator. If the conditional statement in parenthesis is true, the variable takes on the first value after the question mark.
+    If it's not true, the variable takes on the second value after the question mark. This statement is a one-line version of an if-else that allows it to be placed
+    outside of a function.
+
+    This offset exists to make things easier in other parts of the code. Pressing forward on the joystick should always move the robot
+    away from the driver. However, because the blue and red alliances face each other on opposite sides of the field, blue's forward is rotated
+    180 degrees or PI radians from red's forward. Instead of having an if-else every time we use an angle to check which alliance we're on, we use an offset here.
+    If we are on the blue alliance, the offset can be zero as zero degrees is forward. If we're on the red alliance, we rotate all angles by 180
+    To ensure that the relative zero degrees is still forward for the driver.
+     */
+
+    private final Rotation2d m_angleOffset = (AllianceSingleton.getInstance().getAlliance() == Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
     public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
         // Initialize hardware
         m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
@@ -60,7 +75,6 @@ public class MecanumDrivetrain extends SubsystemBase {
             m_pose = new Pose2d(); // Pose at (0,0,0)
         }
 
-        // Set
 
         // Initialize kinematics & odometry
         m_kinematics = new MecanumDriveKinematics(
@@ -98,27 +112,25 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
     }
 
-
     public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
         ChassisSpeeds speeds;
-        if(AllianceSingleton.getInstance().getAlliance() == AllianceSingleton.Alliance.RED) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading().minus(new Rotation2d(Math.PI)));
-        } else {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
-        }
+
+        // This code uses the offset we defined earlier to determine whether forward is to the right in field coordinates or to the left
+        speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading().minus(m_angleOffset));
         move(speeds);
     }
 
     @Override
     public void periodic() {
-        MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
-                m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
-                m_backLeft.getVelocity(), m_backRight.getVelocity()
-        );
-
-        m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+        updatePose();
     }
 
+    /**
+     * This function does not return the absolute rotational position of the robot. It only returns how far the robot has rotated since it started or the last
+     * resetHeading() call.
+     * Boundaries: -360 deg or -PI rad to +360 deg or +PI rad
+     * @return The current heading of the robot
+     */
     public Rotation2d getHeading() {
         return new Rotation2d(m_imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
     }
@@ -136,8 +148,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-        // The values returned from calculate will cause the wheels to spin at maximum speed unless we're within less than sqrt(2) meters from the target position.
-        // If we used a smoothing function like tanh, we could get smoother movement so that the robot slows down smoothly as it approaches its target.
         double x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1); // This may need to be altered to prevent overpowering the motors
         double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1); // This may need to be altered to prevent overpowering the motors
         double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1); // This may need to be altered to prevent overpowering the motors
@@ -158,5 +168,25 @@ public class MecanumDrivetrain extends SubsystemBase {
     public void setTranslationTolerance(double tolerance) {
         m_xPIDF.setTolerance(tolerance);
         m_yPIDF.setTolerance(tolerance);
+    }
+
+    // This function is used by the mechanumDrivetrain class itself to update its position on the field. It works by
+    // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
+    // It will use the odometry object to update the robot's postiion.
+    private void updatePose() {
+        Pose2d visionPose = m_vision.getRobotPoseFromAprilTags();
+
+        // Check to see if we saw and read an april tag
+        if(visionPose != null) {
+            m_odometry.resetPosition(m_vision.getRobotPoseFromAprilTags(), m_angleOffset);
+            m_pose = visionPose;
+        } else {
+            MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
+                    m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
+                    m_backLeft.getVelocity(), m_backRight.getVelocity()
+            );
+
+            m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+        }
     }
 }
