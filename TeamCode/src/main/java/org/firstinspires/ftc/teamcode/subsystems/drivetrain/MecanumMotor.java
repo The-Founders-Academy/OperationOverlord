@@ -13,6 +13,7 @@ public class MecanumMotor {
     public MecanumMotor(MotorEx motor) {
         m_motor = motor;
         m_motor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
+        m_motor.encoder.setDistancePerPulse(0.00056); // 56 mm per pulse
     }
 
     public double getVelocity() {
