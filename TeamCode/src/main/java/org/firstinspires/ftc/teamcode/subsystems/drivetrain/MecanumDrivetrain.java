@@ -178,8 +178,8 @@ public class MecanumDrivetrain extends SubsystemBase {
 
         // Check to see if we saw and read an april tag
         if(visionPose != null) {
-            m_odometry.resetPosition(m_vision.getRobotPoseFromAprilTags(), m_angleOffset);
             m_pose = visionPose;
+            m_odometry.resetPosition(m_pose, m_angleOffset);
         } else {
             MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
                     m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
