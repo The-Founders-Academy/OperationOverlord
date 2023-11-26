@@ -41,7 +41,7 @@ public class Teleop extends CommandOpMode {
         driver = new GamepadEx(gamepad1);
         operator = new GamepadEx(gamepad2);
 
-        drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
+        drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR", telemetry);
         driverControls();
     }
 
