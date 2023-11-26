@@ -17,6 +17,7 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
@@ -31,6 +32,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     private Vision m_vision;
+    private Telemetry telemetry;
 
     // These values need to be tuned when we have access to the drivetrain.
     private PIDFController m_xPIDF = new PIDFController(1, 0, 0, 0);
@@ -51,7 +53,7 @@ public class MecanumDrivetrain extends SubsystemBase {
      */
 
     private final Rotation2d m_angleOffset = (AllianceSingleton.getInstance().getAlliance() == Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
-    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
+    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName, Telemetry telemetry) {
         // Initialize hardware
         m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
@@ -74,6 +76,9 @@ public class MecanumDrivetrain extends SubsystemBase {
         } else {
             m_pose = new Pose2d(); // Pose at (0,0,0)
         }
+
+        // Intialize telemetry. We use the "this" keyword here for clarity because both variables have the same name
+        this.telemetry = telemetry;
 
 
         // Initialize kinematics & odometry
@@ -123,6 +128,8 @@ public class MecanumDrivetrain extends SubsystemBase {
     @Override
     public void periodic() {
         updatePose();
+        // Telemetry code goes here. Remember, add data and then update!
+
     }
 
     /**
