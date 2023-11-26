@@ -59,6 +59,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
         m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
+        m_vision = new Vision(hardwareMap);
         m_imu = hardwareMap.get(IMU.class, "imu");
         m_imu.initialize(
                 new IMU.Parameters(
