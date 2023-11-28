@@ -14,6 +14,8 @@ public class MecanumMotor {
         m_motor = motor;
         m_motor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         m_motor.encoder.setDistancePerPulse(0.00056); // 56 mm per pulse
+        m_motor.setRunMode(Motor.RunMode.VelocityControl);
+        m_motor.setVeloCoefficients(0.1, 0, 0);
     }
 
     public double getVelocity() {
@@ -23,6 +25,7 @@ public class MecanumMotor {
     public void setTargetVelocity(double targetVelocity) {
         m_motor.setVelocity(targetVelocity);
     }
+
 
 
 }

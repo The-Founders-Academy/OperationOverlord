@@ -25,7 +25,7 @@ public class Teleop extends CommandOpMode {
         drivetrain.setDefaultCommand(new DriverRelativeDrive(drivetrain, driver));
 
         // When the driver presses the A button, drive forward 1 meter. We can use this to test odometry.
-        driver.getGamepadButton(GamepadKeys.Button.A).whenPressed(new DriveToPosition(drivetrain, new Pose2d(1, 0, new Rotation2d(0)), 0.03));
+        driver.getGamepadButton(GamepadKeys.Button.A).whenPressed(new DriveToPosition(drivetrain, new Pose2d(3, 0, new Rotation2d(0)), 0.03));
         // Score
         // Shoot airplane
     }
@@ -48,5 +48,8 @@ public class Teleop extends CommandOpMode {
     @Override
     public void run() {
         CommandScheduler.getInstance().run();
+        telemetry.addData("gamepadX", driver.getLeftX());
+        telemetry.addData("gamepadY", driver.getLeftY());
+        telemetry.update();
     }
 }

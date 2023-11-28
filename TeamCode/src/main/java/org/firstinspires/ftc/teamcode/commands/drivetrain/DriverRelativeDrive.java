@@ -23,6 +23,6 @@ public class DriverRelativeDrive extends CommandBase {
 
     @Override
     public void execute() {
-        m_drivetrain.moveFieldRelative(vX, vY, omegaRadiansPerSecond);
+        m_drivetrain.moveFieldRelative(1, 0, 0);
     }
 }

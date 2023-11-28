@@ -31,9 +31,9 @@ public class MecanumDrivetrain extends SubsystemBase {
     private Pose2d m_pose;
     private IMU m_imu;
     private Timer m_elapsedTime;
-    private Vision m_vision;
+    // private Vision m_vision;
     private Telemetry telemetry;
-
+    public String state = "KKKK";
     // These values need to be tuned when we have access to the drivetrain.
     private PIDFController m_xPIDF = new PIDFController(1, 0, 0, 0);
     private PIDFController m_yPIDF = new PIDFController(1, 0 ,0, 0);
@@ -59,7 +59,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
         m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
-        m_vision = new Vision(hardwareMap);
+        // m_vision = new Vision(hardwareMap);
         m_imu = hardwareMap.get(IMU.class, "imu");
         m_imu.initialize(
                 new IMU.Parameters(
@@ -97,6 +97,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         setTranslationTolerance(DrivetrainConstants.TranslationToleranceMeters);
         m_angleRadiansPIDF.setTolerance(DrivetrainConstants.AnglePIDTolerance.getRadians());
 
+
         // We only need a timer object to call m_odometry.updateWithTime(), so the specific length doesn't matter, as long as it lasts longer than an FTC match.
         m_elapsedTime = new Timer(1200); // 20 minutes
         m_elapsedTime.start();
@@ -116,6 +117,8 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_frontRight.setTargetVelocity(wheelSpeeds.frontRightMetersPerSecond);
         m_backLeft.setTargetVelocity(wheelSpeeds.rearLeftMetersPerSecond);
         m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
+        telemetry.addData("FrontLeftSpeed", wheelSpeeds.frontLeftMetersPerSecond);
+        telemetry.addData("ActualFrontLeftSpeed", m_frontLeft.getVelocity());
     }
 
     public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
@@ -130,7 +133,9 @@ public class MecanumDrivetrain extends SubsystemBase {
     public void periodic() {
         updatePose();
         // Telemetry code goes here. Remember, add data and then update!
-
+        telemetry.addData("PoseX", getPose().getX());
+        telemetry.addData("poseY", getPose().getY());
+        telemetry.addData("RobotHeading", getHeading());
     }
 
     /**
@@ -182,7 +187,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
     // It will use the odometry object to update the robot's postiion.
     private void updatePose() {
-        Pose2d visionPose = m_vision.getRobotPoseFromAprilTags();
+        Pose2d visionPose = null; // m_vision.getRobotPoseFromAprilTags();
 
         // Check to see if we saw and read an april tag
         if(visionPose != null) {
