@@ -17,13 +17,11 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
-import org.firstinspires.ftc.teamcode.utility.AllianceSingleton;
-import org.firstinspires.ftc.teamcode.utility.AllianceSingleton.Alliance;
+import org.firstinspires.ftc.teamcode.utility.DriverStation;
+
 public class MecanumDrivetrain extends SubsystemBase {
     private MecanumMotor m_frontLeft, m_frontRight, m_backLeft, m_backRight;
     private MecanumDriveKinematics m_kinematics;
@@ -32,7 +30,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
-    public Telemetry telemetry;
     // These values need to be tuned when we have access to the drivetrain.
     private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0.3, 0);
     private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0.3, 0);
@@ -51,12 +48,13 @@ public class MecanumDrivetrain extends SubsystemBase {
     To ensure that the relative zero degrees is still forward for the driver.
      */
 
-    private final Rotation2d m_angleOffset = (AllianceSingleton.getInstance().getAlliance() == Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
-    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName, Telemetry telemetry) {
+    private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
+    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
         // Initialize hardware
+
         m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
-        m_frontRight.setInverted(true); // Why is it inverted? No idea
+        m_frontRight.setInverted(true);
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
         m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
         // m_vision = new Vision(hardwareMap);
@@ -77,10 +75,6 @@ public class MecanumDrivetrain extends SubsystemBase {
         } else {
             m_pose = new Pose2d(); // Pose at (0,0,0)
         }
-
-        // Intialize telemetry. We use the "this" keyword here for clarity because both variables have the same name
-        this.telemetry = telemetry;
-
 
         // Initialize kinematics & odometry
         m_kinematics = new MecanumDriveKinematics(
@@ -117,8 +111,6 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_frontRight.setTargetVelocity(wheelSpeeds.frontRightMetersPerSecond);
         m_backLeft.setTargetVelocity(wheelSpeeds.rearLeftMetersPerSecond);
         m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
-        telemetry.addData("FrontLeftSpeed", wheelSpeeds.frontLeftMetersPerSecond);
-        telemetry.addData("ActualFrontLeftSpeed", m_frontLeft.getVelocity());
     }
 
     public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
@@ -133,9 +125,13 @@ public class MecanumDrivetrain extends SubsystemBase {
     public void periodic() {
         updatePose();
         // Telemetry code goes here. Remember, add data and then update!
-        telemetry.addData("PoseX", getPose().getX());
-        telemetry.addData("poseY", getPose().getY());
-        telemetry.addData("RobotHeading", getHeading());
+        DriverStation.getInstance().telemetry.addData("FrontLeft", m_frontLeft.getVelocity());
+        DriverStation.getInstance().telemetry.addData("FrontRight", m_frontRight.getVelocity());
+        DriverStation.getInstance().telemetry.addData("BackLeft", m_backLeft.getVelocity());
+        DriverStation.getInstance().telemetry.addData("BackRight", m_backRight.getVelocity());
+
+
+
     }
 
     /**

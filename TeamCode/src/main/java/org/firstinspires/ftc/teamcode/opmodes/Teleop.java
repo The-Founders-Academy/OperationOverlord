@@ -12,8 +12,9 @@ import org.firstinspires.ftc.teamcode.commands.drivetrain.DriveToPosition;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.ResetPose;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
-import org.firstinspires.ftc.teamcode.utility.AllianceSingleton;
+import org.firstinspires.ftc.teamcode.utility.DriverStation;
 
+import java.sql.Driver;
 import java.util.function.Supplier;
 
 @TeleOp(name="TeleOp")
@@ -41,7 +42,7 @@ public class Teleop extends CommandOpMode {
     private Supplier<Double> rightXSupplier = new Supplier<Double>() {
         @Override
         public Double get() {
-            return driver.getButton(GamepadKeys.Button.DPAD_RIGHT) ? -20.0 : driver.getButton(GamepadKeys.Button.DPAD_LEFT) ? 20.0 : 0;
+            return driver.getRightX();
         };
     };
     private void driverControls() {
@@ -61,11 +62,12 @@ public class Teleop extends CommandOpMode {
 
     @Override
     public void initialize() {
-        AllianceSingleton.getInstance().setAlliance(AllianceSingleton.Alliance.BLUE);
+        setupDriverStation();
+
         driver = new GamepadEx(gamepad1);
         operator = new GamepadEx(gamepad2);
 
-        drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR", telemetry);
+        drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
         driverControls();
     }
 
@@ -73,5 +75,10 @@ public class Teleop extends CommandOpMode {
     public void run() {
         CommandScheduler.getInstance().run();
         telemetry.update();
+    }
+
+    private void setupDriverStation() {
+        DriverStation.getInstance().telemetry = telemetry;
+        if(DriverStation.getInstance().alliance == DriverStation.Alliance.NONE) DriverStation.getInstance().alliance = DriverStation.Alliance.BLUE;
     }
 }
