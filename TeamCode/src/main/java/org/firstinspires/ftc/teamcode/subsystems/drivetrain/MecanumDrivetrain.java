@@ -32,12 +32,11 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
-    private Telemetry telemetry;
-    public String state = "KKKK";
+    public Telemetry telemetry;
     // These values need to be tuned when we have access to the drivetrain.
-    private PIDFController m_xPIDF = new PIDFController(1, 0, 0, 0);
-    private PIDFController m_yPIDF = new PIDFController(1, 0 ,0, 0);
-    private PIDFController m_angleRadiansPIDF = new PIDFController(1, 0, 0, 0);
+    private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0.3, 0);
+    private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0.3, 0);
+    private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0, 0, 0);
 
     /*
     A quick explanation:
@@ -57,6 +56,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         // Initialize hardware
         m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
+        m_frontRight.setInverted(true); // Why is it inverted? No idea
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
         m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
         // m_vision = new Vision(hardwareMap);
@@ -66,7 +66,7 @@ public class MecanumDrivetrain extends SubsystemBase {
                         // TO-DO: When we actually mount the control hub, we will need to know the actual values for this
                         new RevHubOrientationOnRobot(
                                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
+                                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
                         )
                 )
         );
@@ -125,7 +125,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         ChassisSpeeds speeds;
 
         // This code uses the offset we defined earlier to determine whether forward is to the right in field coordinates or to the left
-        speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading().minus(m_angleOffset));
+        speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
         move(speeds);
     }
 
@@ -201,5 +201,11 @@ public class MecanumDrivetrain extends SubsystemBase {
 
             m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
         }
+    }
+
+    public void resetHeading() {
+        m_imu.resetYaw();
+        m_pose.getRotation().times(0).minus(m_angleOffset);
+        m_odometry.resetPosition(m_pose,m_pose.getRotation());
     }
 }

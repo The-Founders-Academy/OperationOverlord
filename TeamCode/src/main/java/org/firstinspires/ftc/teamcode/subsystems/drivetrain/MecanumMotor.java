@@ -3,28 +3,36 @@ package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 import com.arcrobotics.ftclib.hardware.motors.Motor;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 
-/**
- * The MecanumMotor class uses a PID loop to ensure the physical mecanum wheel maintains a certain velocity
- * This class is redundant because MotorEx automatically uses the associated encoder port to control velocity using both open and closed loop control. Remove this class at some point.
- */
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.teamcode.Constants;
+
 public class MecanumMotor {
     private MotorEx m_motor;
 
     public MecanumMotor(MotorEx motor) {
         m_motor = motor;
         m_motor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
-        m_motor.encoder.setDistancePerPulse(0.00056); // 56 mm per pulse
-        m_motor.setRunMode(Motor.RunMode.VelocityControl);
-        m_motor.setVeloCoefficients(0.1, 0, 0);
+        m_motor.encoder.setDistancePerPulse(Constants.DrivetrainConstants.DistancePerEncoderTick);
+        // m_motor.setRunMode(Motor.RunMode.VelocityControl);
     }
 
     public double getVelocity() {
-        return m_motor.getVelocity();
+        return m_motor.getVelocity() * Constants.DrivetrainConstants.DistancePerEncoderTick;
     }
 
     public void setTargetVelocity(double targetVelocity) {
-        m_motor.setVelocity(targetVelocity);
+        m_motor.set(targetVelocity);
     }
+
+    public double getDistanceMeters() {
+        return m_motor.getDistance();
+    }
+
+    public void setInverted(boolean val) {
+        m_motor.setInverted(val);
+    }
+
+
 
 
 

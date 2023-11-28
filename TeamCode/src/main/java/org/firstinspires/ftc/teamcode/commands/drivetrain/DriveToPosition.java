@@ -31,13 +31,11 @@ public class DriveToPosition extends CommandBase {
 
     @Override
     public boolean isFinished() {
-        m_drivetrain.state = "isFInished false";
         return m_drivetrain.atTarget();
     }
 
     @Override
     public void end(boolean interrupted) {
         m_drivetrain.resetPIDs();
-        m_drivetrain.state = "DriveToPos done";
     }
 }
