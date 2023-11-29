@@ -17,7 +17,7 @@ public class Constants {
     vertical: 168 mm
      */
     public static class DrivetrainConstants {
-        public static final double MaxRobotSpeedMetersPerSecond = 1;
+        public static final double MaxRobotSpeedMetersPerSecond = 1.5; // Theoretical value from the strafer chassis product page
         public static final double MaxAngularVeloityRadiansPerSecond = 1;
         public static final Rotation2d AnglePIDTolerance = Rotation2d.fromDegrees(3.0); // Maximum 3 degree difference between set and actual
         public static final Translation2d FrontLeftMotorLocation = new Translation2d(0.207, 0.168);

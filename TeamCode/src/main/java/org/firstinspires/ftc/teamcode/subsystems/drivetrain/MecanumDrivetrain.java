@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
-import androidx.core.math.MathUtils;
-
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
@@ -48,7 +46,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     To ensure that the relative zero degrees is still forward for the driver.
      */
 
-    private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
+    // private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
     public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
         // Initialize hardware
 
@@ -102,36 +100,44 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     private void move(ChassisSpeeds chassisSpeeds) {
-        chassisSpeeds.vxMetersPerSecond = MathUtils.clamp(chassisSpeeds.vxMetersPerSecond, -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        chassisSpeeds.vyMetersPerSecond = MathUtils.clamp(chassisSpeeds.vyMetersPerSecond, -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        chassisSpeeds.omegaRadiansPerSecond = MathUtils.clamp(chassisSpeeds.omegaRadiansPerSecond, -1, 1) * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
-
         MecanumDriveWheelSpeeds wheelSpeeds = m_kinematics.toWheelSpeeds(chassisSpeeds);
-        m_frontLeft.setTargetVelocity(wheelSpeeds.frontLeftMetersPerSecond);
-        m_frontRight.setTargetVelocity(wheelSpeeds.frontRightMetersPerSecond);
-        m_backLeft.setTargetVelocity(wheelSpeeds.rearLeftMetersPerSecond);
-        m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
+        m_frontLeft.setPower(wheelSpeeds.frontLeftMetersPerSecond);
+        m_frontRight.setPower(wheelSpeeds.frontRightMetersPerSecond);
+        m_backLeft.setPower(wheelSpeeds.rearLeftMetersPerSecond);
+        m_backRight.setPower(wheelSpeeds.rearRightMetersPerSecond);
     }
 
     public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
-        ChassisSpeeds speeds;
-
-        // This code uses the offset we defined earlier to determine whether forward is to the right in field coordinates or to the left
-        speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
+        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
         move(speeds);
     }
 
     @Override
     public void periodic() {
         updatePose();
-        // Telemetry code goes here. Remember, add data and then update!
-        DriverStation.getInstance().telemetry.addData("FrontLeft", m_frontLeft.getVelocity());
-        DriverStation.getInstance().telemetry.addData("FrontRight", m_frontRight.getVelocity());
-        DriverStation.getInstance().telemetry.addData("BackLeft", m_backLeft.getVelocity());
-        DriverStation.getInstance().telemetry.addData("BackRight", m_backRight.getVelocity());
+        // Telemetry code goes here
 
+        // Wheel speed data
+        DriverStation.getInstance().telemetry.addData("fLSpeed", m_frontLeft.getVelocity());
+        DriverStation.getInstance().telemetry.addData("fRSpeed", m_frontRight.getVelocity());
+        DriverStation.getInstance().telemetry.addData("bLSpeed", m_backLeft.getVelocity());
+        DriverStation.getInstance().telemetry.addData("bRSpeed", m_backRight.getVelocity());
 
+        // Encoder data
+        DriverStation.getInstance().telemetry.addData("fLEncoderPosition", m_frontLeft.getEncoder().getPosition());
+        DriverStation.getInstance().telemetry.addData("fREncoderPosition", m_frontRight.getEncoder().getPosition());
+        DriverStation.getInstance().telemetry.addData("bLEncoderPosition", m_backLeft.getEncoder().getPosition());
+        DriverStation.getInstance().telemetry.addData("bREncoderPosition", m_backRight.getEncoder().getPosition());
+        DriverStation.getInstance().telemetry.addData("fLEncoderRate", m_frontLeft.getEncoder().getRate());
+        DriverStation.getInstance().telemetry.addData("fREncoderRate", m_frontRight.getEncoder().getRate());
+        DriverStation.getInstance().telemetry.addData("bLEncoderRate", m_backLeft.getEncoder().getRate());
+        DriverStation.getInstance().telemetry.addData("bREncoderRate", m_backRight.getEncoder().getRate());
 
+        // Pose & heading data
+        DriverStation.getInstance().telemetry.addData("RobotPoseX", getPose().getX());
+        DriverStation.getInstance().telemetry.addData("RobotPoseY", getPose().getY());
+        DriverStation.getInstance().telemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
+        DriverStation.getInstance().telemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
     }
 
     /**
@@ -157,9 +163,9 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-        double x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1); // This may need to be altered to prevent overpowering the motors
-        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1); // This may need to be altered to prevent overpowering the motors
-        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1); // This may need to be altered to prevent overpowering the motors
+        double x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
+        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
+        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1) * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond; // This may need to be altered to prevent overpowering the motors
         moveFieldRelative(x, y, omegaRadiansPerSecond);
     }
 
@@ -188,7 +194,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         // Check to see if we saw and read an april tag
         if(visionPose != null) {
             m_pose = visionPose;
-            m_odometry.resetPosition(m_pose, m_angleOffset);
+            m_odometry.resetPosition(m_pose, getHeading());
         } else {
             MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
                     m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
@@ -201,7 +207,7 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     public void resetHeading() {
         m_imu.resetYaw();
-        m_pose.getRotation().times(0).minus(m_angleOffset);
-        m_odometry.resetPosition(m_pose,m_pose.getRotation());
+        m_pose.getRotation().times(0);
+        m_odometry.resetPosition(m_pose,getHeading());
     }
 }

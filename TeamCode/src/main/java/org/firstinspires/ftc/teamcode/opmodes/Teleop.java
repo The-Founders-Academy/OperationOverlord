@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriveToPosition;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.ResetPose;
+import org.firstinspires.ftc.teamcode.subsystems.GamepadSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
 
@@ -20,37 +21,17 @@ import java.util.function.Supplier;
 @TeleOp(name="TeleOp")
 public class Teleop extends CommandOpMode {
 
-    private GamepadEx driver;
-    private GamepadEx operator;
+    private GamepadSubsystem m_driver;
+    private GamepadSubsystem m_operator;
 
-    private MecanumDrivetrain drivetrain;
+    private MecanumDrivetrain m_drivetrain;
 
-    private Supplier<Double> leftXSupplier = new Supplier<Double>() {
-        @Override
-        public Double get() {
-            return driver.getLeftX();
-        };
-    };
-
-    private Supplier<Double> leftYSupplier = new Supplier<Double>() {
-        @Override
-        public Double get() {
-            return -driver.getLeftY();
-        };
-    };
-
-    private Supplier<Double> rightXSupplier = new Supplier<Double>() {
-        @Override
-        public Double get() {
-            return driver.getRightX();
-        };
-    };
     private void driverControls() {
-        drivetrain.setDefaultCommand(new DriverRelativeDrive(drivetrain, leftXSupplier, leftYSupplier, rightXSupplier));
+        m_drivetrain.setDefaultCommand(new DriverRelativeDrive(m_drivetrain, m_driver));
 
         // When the driver presses the A button, drive forward 1 meter. We can use this to test odometry.
-        driver.getGamepadButton(GamepadKeys.Button.A).whenPressed(new DriveToPosition(drivetrain, new Pose2d(1, 0, new Rotation2d(Math.PI)), 0.03));
-        driver.getGamepadButton(GamepadKeys.Button.B).whenPressed(new ResetPose(drivetrain));
+        m_driver.buttonA().whenPressed(new DriveToPosition(m_drivetrain, new Pose2d(1, 0, new Rotation2d(Math.PI)), 0.03));
+        m_driver.buttonB().whenPressed(new ResetPose(m_drivetrain));
         // Score
         // Shoot airplane
     }
@@ -64,10 +45,10 @@ public class Teleop extends CommandOpMode {
     public void initialize() {
         setupDriverStation();
 
-        driver = new GamepadEx(gamepad1);
-        operator = new GamepadEx(gamepad2);
+        m_driver = new GamepadSubsystem(new GamepadEx(gamepad1));
+        m_operator = new GamepadSubsystem(new GamepadEx(gamepad2));
 
-        drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
+        m_drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
         driverControls();
     }
 

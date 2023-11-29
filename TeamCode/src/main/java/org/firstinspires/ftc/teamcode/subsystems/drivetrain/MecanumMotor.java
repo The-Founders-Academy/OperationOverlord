@@ -1,9 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
 import com.arcrobotics.ftclib.hardware.motors.Motor;
+import com.arcrobotics.ftclib.hardware.motors.Motor.Encoder;
 import com.arcrobotics.ftclib.hardware.motors.MotorEx;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Constants;
 
 public class MecanumMotor {
@@ -20,19 +20,21 @@ public class MecanumMotor {
         return m_motor.getVelocity() * Constants.DrivetrainConstants.DistancePerEncoderTick;
     }
 
-    public void setTargetVelocity(double targetVelocity) {
-        m_motor.set(targetVelocity);
+    public void setPower(double power) {
+        m_motor.set(power);
     }
 
-    public double getDistanceMeters() {
-        return m_motor.getDistance();
+    public void setTargetVelocity(double targetVelocity) {
+        m_motor.setVelocity(targetVelocity);
     }
 
     public void setInverted(boolean val) {
         m_motor.setInverted(val);
     }
 
-
+    public Encoder getEncoder() {
+        return m_motor.encoder;
+    }
 
 
 
