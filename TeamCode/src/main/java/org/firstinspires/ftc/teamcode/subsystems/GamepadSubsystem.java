@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.command.button.GamepadButton;
+import com.arcrobotics.ftclib.command.button.Trigger;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 import com.arcrobotics.ftclib.gamepad.GamepadKeys;
 
@@ -62,5 +63,13 @@ public class GamepadSubsystem extends SubsystemBase {
 
     public double getLeftMagnitude() {
         return Math.sqrt(Math.pow(getLeftX(), 2) + Math.pow(getLeftY(), 2));
+    }
+
+    public double leftTrigger() {
+        return m_gamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER);
+    }
+
+    public double rightTrigger() {
+        return m_gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER);
     }
 }

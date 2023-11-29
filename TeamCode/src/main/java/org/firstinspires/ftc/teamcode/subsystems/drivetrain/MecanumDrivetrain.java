@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
@@ -15,6 +16,7 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
@@ -28,6 +30,10 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
+    private FtcDashboard m_dashboard = FtcDashboard.getInstance();
+    private Telemetry dashboardTelemetry = m_dashboard.getTelemetry();
+
+
     // These values need to be tuned when we have access to the drivetrain.
     private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0.3, 0);
     private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0.3, 0);
@@ -115,29 +121,31 @@ public class MecanumDrivetrain extends SubsystemBase {
     @Override
     public void periodic() {
         updatePose();
-        // Telemetry code goes here
 
+        // Telemetry code goes here
         // Wheel speed data
-        DriverStation.getInstance().telemetry.addData("fLSpeed", m_frontLeft.getVelocity());
-        DriverStation.getInstance().telemetry.addData("fRSpeed", m_frontRight.getVelocity());
-        DriverStation.getInstance().telemetry.addData("bLSpeed", m_backLeft.getVelocity());
-        DriverStation.getInstance().telemetry.addData("bRSpeed", m_backRight.getVelocity());
+        dashboardTelemetry.addData("fLSpeed", m_frontLeft.getVelocity());
+        dashboardTelemetry.addData("fRSpeed", m_frontRight.getVelocity());
+        dashboardTelemetry.addData("bLSpeed", m_backLeft.getVelocity());
+        dashboardTelemetry.addData("bRSpeed", m_backRight.getVelocity());
 
         // Encoder data
-        DriverStation.getInstance().telemetry.addData("fLEncoderPosition", m_frontLeft.getEncoder().getPosition());
-        DriverStation.getInstance().telemetry.addData("fREncoderPosition", m_frontRight.getEncoder().getPosition());
-        DriverStation.getInstance().telemetry.addData("bLEncoderPosition", m_backLeft.getEncoder().getPosition());
-        DriverStation.getInstance().telemetry.addData("bREncoderPosition", m_backRight.getEncoder().getPosition());
-        DriverStation.getInstance().telemetry.addData("fLEncoderRate", m_frontLeft.getEncoder().getRate());
-        DriverStation.getInstance().telemetry.addData("fREncoderRate", m_frontRight.getEncoder().getRate());
-        DriverStation.getInstance().telemetry.addData("bLEncoderRate", m_backLeft.getEncoder().getRate());
-        DriverStation.getInstance().telemetry.addData("bREncoderRate", m_backRight.getEncoder().getRate());
+        dashboardTelemetry.addData("fLEncoderPosition", m_frontLeft.getEncoder().getPosition());
+        dashboardTelemetry.addData("fREncoderPosition", m_frontRight.getEncoder().getPosition());
+        dashboardTelemetry.addData("bLEncoderPosition", m_backLeft.getEncoder().getPosition());
+        dashboardTelemetry.addData("bREncoderPosition", m_backRight.getEncoder().getPosition());
+        dashboardTelemetry.addData("fLEncoderRate", m_frontLeft.getEncoder().getRate());
+        dashboardTelemetry.addData("fREncoderRate", m_frontRight.getEncoder().getRate());
+        dashboardTelemetry.addData("bLEncoderRate", m_backLeft.getEncoder().getRate());
+        dashboardTelemetry.addData("bREncoderRate", m_backRight.getEncoder().getRate());
 
         // Pose & heading data
-        DriverStation.getInstance().telemetry.addData("RobotPoseX", getPose().getX());
-        DriverStation.getInstance().telemetry.addData("RobotPoseY", getPose().getY());
-        DriverStation.getInstance().telemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
-        DriverStation.getInstance().telemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
+        dashboardTelemetry.addData("RobotPoseX", getPose().getX());
+        dashboardTelemetry.addData("RobotPoseY", getPose().getY());
+        dashboardTelemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
+        dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
+
+        dashboardTelemetry.update();
     }
 
     /**
