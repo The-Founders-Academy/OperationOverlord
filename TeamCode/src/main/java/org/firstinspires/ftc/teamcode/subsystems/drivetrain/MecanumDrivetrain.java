@@ -22,6 +22,7 @@ import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
 
+// SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
     private MecanumMotor m_frontLeft, m_frontRight, m_backLeft, m_backRight;
     private MecanumDriveKinematics m_kinematics;
