@@ -3,26 +3,28 @@ package org.firstinspires.ftc.teamcode.commands.drivetrain;
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
 
+import org.firstinspires.ftc.teamcode.Constants;
+import org.firstinspires.ftc.teamcode.subsystems.GamepadSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
+import org.firstinspires.ftc.teamcode.utility.DriverStation;
+
+import java.util.function.Supplier;
 
 public class DriverRelativeDrive extends CommandBase {
-
-    private double vX;
-    private double vY;
-    private double omegaRadiansPerSecond;
+    private GamepadSubsystem m_driver;
     private MecanumDrivetrain m_drivetrain;
 
-    public DriverRelativeDrive(MecanumDrivetrain mecanumDrive, GamepadEx driver) {
-        vX = driver.getLeftY();
-        vY = driver.getLeftX();
-        omegaRadiansPerSecond = driver.getRightX();
-
+    public DriverRelativeDrive(MecanumDrivetrain mecanumDrive, GamepadSubsystem driver) {
+        m_driver = driver;
         m_drivetrain = mecanumDrive;
-        addRequirements(m_drivetrain); // This may be a point of failure and may need testing.
+        addRequirements(m_drivetrain, m_driver); // This may be a point of failure and may need testing.
     }
 
     @Override
     public void execute() {
-        m_drivetrain.moveFieldRelative(vX, vY, omegaRadiansPerSecond);
+        double leftRightMetersPerSecond = m_driver.getLeftX() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double forwardBackMetersPerSecond = -m_driver.getLeftY() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double omegaRadiansPerSecond = m_driver.getRightX() * Constants.DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
+        m_drivetrain.moveFieldRelative(forwardBackMetersPerSecond, leftRightMetersPerSecond, omegaRadiansPerSecond);
     }
 }

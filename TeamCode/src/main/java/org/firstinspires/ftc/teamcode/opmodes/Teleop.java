@@ -10,22 +10,28 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriveToPosition;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
+import org.firstinspires.ftc.teamcode.commands.drivetrain.ResetPose;
+import org.firstinspires.ftc.teamcode.subsystems.GamepadSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
-import org.firstinspires.ftc.teamcode.utility.AllianceSingleton;
+import org.firstinspires.ftc.teamcode.utility.DriverStation;
+
+import java.sql.Driver;
+import java.util.function.Supplier;
 
 @TeleOp(name="TeleOp")
 public class Teleop extends CommandOpMode {
 
-    private GamepadEx driver;
-    private GamepadEx operator;
+    private GamepadSubsystem m_driver;
+    private GamepadSubsystem m_operator;
 
-    private MecanumDrivetrain drivetrain;
+    private MecanumDrivetrain m_drivetrain;
 
     private void driverControls() {
-        drivetrain.setDefaultCommand(new DriverRelativeDrive(drivetrain, driver));
+        m_drivetrain.setDefaultCommand(new DriverRelativeDrive(m_drivetrain, m_driver));
 
         // When the driver presses the A button, drive forward 1 meter. We can use this to test odometry.
-        driver.getGamepadButton(GamepadKeys.Button.A).whenPressed(new DriveToPosition(drivetrain, new Pose2d(1, 0, new Rotation2d(0)), 0.03));
+        m_driver.buttonA().whenPressed(new DriveToPosition(m_drivetrain, new Pose2d(1, 0, new Rotation2d(0)), 0.03));
+        m_driver.buttonB().whenPressed(new ResetPose(m_drivetrain));
         // Score
         // Shoot airplane
     }
@@ -37,16 +43,23 @@ public class Teleop extends CommandOpMode {
 
     @Override
     public void initialize() {
-        AllianceSingleton.getInstance().setAlliance(AllianceSingleton.Alliance.BLUE);
-        driver = new GamepadEx(gamepad1);
-        operator = new GamepadEx(gamepad2);
+        setupDriverStation();
 
-        drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR", telemetry);
+        m_driver = new GamepadSubsystem(new GamepadEx(gamepad1));
+        m_operator = new GamepadSubsystem(new GamepadEx(gamepad2));
+
+        m_drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
         driverControls();
     }
 
     @Override
     public void run() {
         CommandScheduler.getInstance().run();
+        telemetry.update();
+    }
+
+    private void setupDriverStation() {
+        DriverStation.getInstance().telemetry = telemetry;
+        if(DriverStation.getInstance().alliance == DriverStation.Alliance.NONE) DriverStation.getInstance().alliance = DriverStation.Alliance.BLUE;
     }
 }

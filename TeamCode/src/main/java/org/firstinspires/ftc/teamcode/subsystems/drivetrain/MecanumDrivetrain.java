@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
-import androidx.core.math.MathUtils;
-
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
@@ -19,11 +18,13 @@ import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Rotation;
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
-import org.firstinspires.ftc.teamcode.utility.AllianceSingleton;
-import org.firstinspires.ftc.teamcode.utility.AllianceSingleton.Alliance;
+import org.firstinspires.ftc.teamcode.utility.DriverStation;
+
+import java.sql.Driver;
+
+// SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
     private MecanumMotor m_frontLeft, m_frontRight, m_backLeft, m_backRight;
     private MecanumDriveKinematics m_kinematics;
@@ -31,13 +32,14 @@ public class MecanumDrivetrain extends SubsystemBase {
     private Pose2d m_pose;
     private IMU m_imu;
     private Timer m_elapsedTime;
-    private Vision m_vision;
-    private Telemetry telemetry;
+    // private Vision m_vision;
+    private Telemetry dashboardTelemetry = DriverStation.getInstance().telemetry;;
+
 
     // These values need to be tuned when we have access to the drivetrain.
-    private PIDFController m_xPIDF = new PIDFController(1, 0, 0, 0);
-    private PIDFController m_yPIDF = new PIDFController(1, 0 ,0, 0);
-    private PIDFController m_angleRadiansPIDF = new PIDFController(1, 0, 0, 0);
+    private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0, 0);
+    private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0, 0);
+    private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0.05, 0, 0);
 
     /*
     A quick explanation:
@@ -52,21 +54,24 @@ public class MecanumDrivetrain extends SubsystemBase {
     To ensure that the relative zero degrees is still forward for the driver.
      */
 
-    private final Rotation2d m_angleOffset = (AllianceSingleton.getInstance().getAlliance() == Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
-    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName, Telemetry telemetry) {
+    // private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
+    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
         // Initialize hardware
+
         m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
+        m_frontRight.setInverted(true);
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
         m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
-        m_vision = new Vision(hardwareMap);
+        m_backRight.setInverted(true);
+        // m_vision = new Vision(hardwareMap);
         m_imu = hardwareMap.get(IMU.class, "imu");
         m_imu.initialize(
                 new IMU.Parameters(
                         // TO-DO: When we actually mount the control hub, we will need to know the actual values for this
                         new RevHubOrientationOnRobot(
                                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD
+                                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
                         )
                 )
         );
@@ -77,10 +82,6 @@ public class MecanumDrivetrain extends SubsystemBase {
         } else {
             m_pose = new Pose2d(); // Pose at (0,0,0)
         }
-
-        // Intialize telemetry. We use the "this" keyword here for clarity because both variables have the same name
-        this.telemetry = telemetry;
-
 
         // Initialize kinematics & odometry
         m_kinematics = new MecanumDriveKinematics(
@@ -97,6 +98,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         setTranslationTolerance(DrivetrainConstants.TranslationToleranceMeters);
         m_angleRadiansPIDF.setTolerance(DrivetrainConstants.AnglePIDTolerance.getRadians());
 
+
         // We only need a timer object to call m_odometry.updateWithTime(), so the specific length doesn't matter, as long as it lasts longer than an FTC match.
         m_elapsedTime = new Timer(1200); // 20 minutes
         m_elapsedTime.start();
@@ -107,10 +109,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     private void move(ChassisSpeeds chassisSpeeds) {
-        chassisSpeeds.vxMetersPerSecond = MathUtils.clamp(chassisSpeeds.vxMetersPerSecond, -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        chassisSpeeds.vyMetersPerSecond = MathUtils.clamp(chassisSpeeds.vyMetersPerSecond, -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        chassisSpeeds.omegaRadiansPerSecond = MathUtils.clamp(chassisSpeeds.omegaRadiansPerSecond, -1, 1) * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
-
         MecanumDriveWheelSpeeds wheelSpeeds = m_kinematics.toWheelSpeeds(chassisSpeeds);
         m_frontLeft.setTargetVelocity(wheelSpeeds.frontLeftMetersPerSecond);
         m_frontRight.setTargetVelocity(wheelSpeeds.frontRightMetersPerSecond);
@@ -118,19 +116,23 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
     }
 
+    // positive x = away from you
+    // positive y = to your left
     public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
-        ChassisSpeeds speeds;
-
-        // This code uses the offset we defined earlier to determine whether forward is to the right in field coordinates or to the left
-        speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading().minus(m_angleOffset));
+        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
         move(speeds);
     }
 
     @Override
     public void periodic() {
         updatePose();
-        // Telemetry code goes here. Remember, add data and then update!
 
+        dashboardTelemetry.addData("robotPoseX", getPose().getX());
+        dashboardTelemetry.addData("robotPoseY", getPose().getY());
+        dashboardTelemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
+        dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
+
+        dashboardTelemetry.update();
     }
 
     /**
@@ -156,9 +158,9 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-        double x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1); // This may need to be altered to prevent overpowering the motors
-        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1); // This may need to be altered to prevent overpowering the motors
-        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1); // This may need to be altered to prevent overpowering the motors
+        double x = -UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
+        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
+        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1) * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond; // This may need to be altered to prevent overpowering the motors
         moveFieldRelative(x, y, omegaRadiansPerSecond);
     }
 
@@ -182,19 +184,26 @@ public class MecanumDrivetrain extends SubsystemBase {
     // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
     // It will use the odometry object to update the robot's postiion.
     private void updatePose() {
-        Pose2d visionPose = m_vision.getRobotPoseFromAprilTags();
+        Pose2d visionPose = null; // m_vision.getRobotPoseFromAprilTags();
 
         // Check to see if we saw and read an april tag
         if(visionPose != null) {
             m_pose = visionPose;
-            m_odometry.resetPosition(m_pose, m_angleOffset);
+            m_odometry.resetPosition(m_pose, getHeading());
         } else {
+            // Trick to reverse the odometry. Because I (Kenny) am lazy, I want us to have the field coordinates actually be driver relative, with x away and y to the left
             MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
-                    m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
-                    m_backLeft.getVelocity(), m_backRight.getVelocity()
+                    -m_frontLeft.getVelocity(), -m_frontRight.getVelocity(),
+                    -m_backLeft.getVelocity(), -m_backRight.getVelocity()
             );
 
             m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
         }
+    }
+
+    public void resetHeading() {
+        m_imu.resetYaw();
+        m_pose.getRotation().times(0);
+        m_odometry.resetPosition(m_pose,getHeading());
     }
 }
