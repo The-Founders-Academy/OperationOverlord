@@ -22,6 +22,8 @@ import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
 
+import java.sql.Driver;
+
 // SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
     private MecanumMotor m_frontLeft, m_frontRight, m_backLeft, m_backRight;
@@ -31,14 +33,13 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
-    private FtcDashboard m_dashboard = FtcDashboard.getInstance();
-    private Telemetry dashboardTelemetry = m_dashboard.getTelemetry();
+    private Telemetry dashboardTelemetry = DriverStation.getInstance().telemetry;;
 
 
     // These values need to be tuned when we have access to the drivetrain.
-    private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0.3, 0);
-    private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0.3, 0);
-    private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0, 0, 0);
+    private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0, 0);
+    private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0, 0);
+    private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0.05, 0, 0);
 
     /*
     A quick explanation:
@@ -62,6 +63,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_frontRight.setInverted(true);
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
         m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
+        m_backRight.setInverted(true);
         // m_vision = new Vision(hardwareMap);
         m_imu = hardwareMap.get(IMU.class, "imu");
         m_imu.initialize(
@@ -108,12 +110,14 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     private void move(ChassisSpeeds chassisSpeeds) {
         MecanumDriveWheelSpeeds wheelSpeeds = m_kinematics.toWheelSpeeds(chassisSpeeds);
-        m_frontLeft.setPower(wheelSpeeds.frontLeftMetersPerSecond);
-        m_frontRight.setPower(wheelSpeeds.frontRightMetersPerSecond);
-        m_backLeft.setPower(wheelSpeeds.rearLeftMetersPerSecond);
-        m_backRight.setPower(wheelSpeeds.rearRightMetersPerSecond);
+        m_frontLeft.setTargetVelocity(wheelSpeeds.frontLeftMetersPerSecond);
+        m_frontRight.setTargetVelocity(wheelSpeeds.frontRightMetersPerSecond);
+        m_backLeft.setTargetVelocity(wheelSpeeds.rearLeftMetersPerSecond);
+        m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
     }
 
+    // positive x = away from you
+    // positive y = to your left
     public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
         ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
         move(speeds);
@@ -123,26 +127,8 @@ public class MecanumDrivetrain extends SubsystemBase {
     public void periodic() {
         updatePose();
 
-        // Telemetry code goes here
-        // Wheel speed data
-        dashboardTelemetry.addData("fLSpeed", m_frontLeft.getVelocity());
-        dashboardTelemetry.addData("fRSpeed", m_frontRight.getVelocity());
-        dashboardTelemetry.addData("bLSpeed", m_backLeft.getVelocity());
-        dashboardTelemetry.addData("bRSpeed", m_backRight.getVelocity());
-
-        // Encoder data
-        dashboardTelemetry.addData("fLEncoderPosition", m_frontLeft.getEncoder().getPosition());
-        dashboardTelemetry.addData("fREncoderPosition", m_frontRight.getEncoder().getPosition());
-        dashboardTelemetry.addData("bLEncoderPosition", m_backLeft.getEncoder().getPosition());
-        dashboardTelemetry.addData("bREncoderPosition", m_backRight.getEncoder().getPosition());
-        dashboardTelemetry.addData("fLEncoderRate", m_frontLeft.getEncoder().getRate());
-        dashboardTelemetry.addData("fREncoderRate", m_frontRight.getEncoder().getRate());
-        dashboardTelemetry.addData("bLEncoderRate", m_backLeft.getEncoder().getRate());
-        dashboardTelemetry.addData("bREncoderRate", m_backRight.getEncoder().getRate());
-
-        // Pose & heading data
-        dashboardTelemetry.addData("RobotPoseX", getPose().getX());
-        dashboardTelemetry.addData("RobotPoseY", getPose().getY());
+        dashboardTelemetry.addData("robotPoseX", getPose().getX());
+        dashboardTelemetry.addData("robotPoseY", getPose().getY());
         dashboardTelemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
         dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
 
@@ -172,7 +158,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-        double x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
+        double x = -UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
         double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
         double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1) * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond; // This may need to be altered to prevent overpowering the motors
         moveFieldRelative(x, y, omegaRadiansPerSecond);
@@ -205,9 +191,10 @@ public class MecanumDrivetrain extends SubsystemBase {
             m_pose = visionPose;
             m_odometry.resetPosition(m_pose, getHeading());
         } else {
+            // Trick to reverse the odometry. Because I (Kenny) am lazy, I want us to have the field coordinates actually be driver relative, with x away and y to the left
             MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
-                    m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
-                    m_backLeft.getVelocity(), m_backRight.getVelocity()
+                    -m_frontLeft.getVelocity(), -m_frontRight.getVelocity(),
+                    -m_backLeft.getVelocity(), -m_backRight.getVelocity()
             );
 
             m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);

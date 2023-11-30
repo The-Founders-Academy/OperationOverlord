@@ -22,9 +22,9 @@ public class DriverRelativeDrive extends CommandBase {
 
     @Override
     public void execute() {
-        double xVelocityMetersPerSecond = m_driver.getLeftX() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double yVelocityMetersPerSecond = m_driver.getLeftX() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double leftRightMetersPerSecond = m_driver.getLeftX() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double forwardBackMetersPerSecond = -m_driver.getLeftY() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
         double omegaRadiansPerSecond = m_driver.getRightX() * Constants.DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
-        m_drivetrain.moveFieldRelative(yVelocityMetersPerSecond, xVelocityMetersPerSecond, omegaRadiansPerSecond);
+        m_drivetrain.moveFieldRelative(forwardBackMetersPerSecond, leftRightMetersPerSecond, omegaRadiansPerSecond);
     }
 }
