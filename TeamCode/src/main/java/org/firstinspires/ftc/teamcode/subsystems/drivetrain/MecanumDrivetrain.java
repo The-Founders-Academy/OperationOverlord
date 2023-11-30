@@ -33,7 +33,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
-    private Telemetry dashboardTelemetry = DriverStation.getInstance().telemetry;;
+    private Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
 
 
     // These values need to be tuned when we have access to the drivetrain.
@@ -133,6 +133,8 @@ public class MecanumDrivetrain extends SubsystemBase {
         dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
 
         dashboardTelemetry.update();
+
+        tunePIDs();
     }
 
     /**
@@ -205,5 +207,11 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_imu.resetYaw();
         m_pose.getRotation().times(0);
         m_odometry.resetPosition(m_pose,getHeading());
+    }
+
+    private void tunePIDs() {
+        m_xPIDF.setPIDF(DrivetrainConstants.XPIDF.p, DrivetrainConstants.XPIDF.i, DrivetrainConstants.XPIDF.d, DrivetrainConstants.XPIDF.f);
+        m_xPIDF.setPIDF(DrivetrainConstants.YPIDF.p, DrivetrainConstants.YPIDF.i, DrivetrainConstants.YPIDF.d, DrivetrainConstants.YPIDF.f);
+        m_xPIDF.setPIDF(DrivetrainConstants.AnglePIDF.p, DrivetrainConstants.AnglePIDF.i, DrivetrainConstants.AnglePIDF.d, DrivetrainConstants.AnglePIDF.f);
     }
 }
