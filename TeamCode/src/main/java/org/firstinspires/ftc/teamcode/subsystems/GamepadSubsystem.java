@@ -57,7 +57,7 @@ public class GamepadSubsystem extends SubsystemBase {
         return m_gamepad.getRightX();
     }
 
-    public double getleftAngleRadians() {
+    public double getLeftAngleRadians() {
         return Math.atan2(getLeftY(), getLeftX());
     }
 

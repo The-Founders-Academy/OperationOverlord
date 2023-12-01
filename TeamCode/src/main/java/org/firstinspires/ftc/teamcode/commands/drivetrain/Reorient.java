@@ -4,17 +4,17 @@ import com.arcrobotics.ftclib.command.CommandBase;
 
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
 
-public class ResetPose extends CommandBase {
+public class Reorient extends CommandBase {
     private MecanumDrivetrain m_drivetrain;
 
-    public ResetPose(MecanumDrivetrain drivetrain) {
+    public Reorient(MecanumDrivetrain drivetrain) {
         m_drivetrain = drivetrain;
         addRequirements(m_drivetrain);
     }
 
     @Override
     public void execute() {
-        m_drivetrain.resetHeading();
+        m_drivetrain.reorient();
     }
 
     @Override

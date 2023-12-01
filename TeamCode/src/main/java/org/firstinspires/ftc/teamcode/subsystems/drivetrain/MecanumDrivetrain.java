@@ -21,15 +21,23 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
-
-import java.sql.Driver;
+import org.firstinspires.ftc.teamcode.utility.DriverStation.Alliance;
 
 // SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
     private MecanumMotor m_frontLeft, m_frontRight, m_backLeft, m_backRight;
     private MecanumDriveKinematics m_kinematics;
     private MecanumDriveOdometry m_odometry;
+    /*
+    FIELD COORDINATE EXPLANATION:
+    Positve Y - points away from the red driver station
+    Positive X - points to the right of the red driver station
+    Rotation - positive rotation turns CCW (to the left of the red driver station)
+
+    The position and rotation in m_pose are in field coordinates and do not change with robot orientation.
+     */
     private Pose2d m_pose;
+    // The heading value produced by m_imu is relative to a starting position and is exclusively for robot control.
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
@@ -41,29 +49,17 @@ public class MecanumDrivetrain extends SubsystemBase {
     private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0, 0);
     private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0.05, 0, 0);
 
-    /*
-    A quick explanation:
-    This is what's called a ternary conditional operator. If the conditional statement in parenthesis is true, the variable takes on the first value after the question mark.
-    If it's not true, the variable takes on the second value after the question mark. This statement is a one-line version of an if-else that allows it to be placed
-    outside of a function.
-
-    This offset exists to make things easier in other parts of the code. Pressing forward on the joystick should always move the robot
-    away from the driver. However, because the blue and red alliances face each other on opposite sides of the field, blue's forward is rotated
-    180 degrees or PI radians from red's forward. Instead of having an if-else every time we use an angle to check which alliance we're on, we use an offset here.
-    If we are on the blue alliance, the offset can be zero as zero degrees is forward. If we're on the red alliance, we rotate all angles by 180
-    To ensure that the relative zero degrees is still forward for the driver.
-     */
-
-    // private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
-    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
+    public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap) {
         // Initialize hardware
 
-        m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
-        m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
-        m_frontRight.setInverted(true);
-        m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
-        m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
-        m_backRight.setInverted(true);
+        m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, DrivetrainConstants.FrontLeftName, Motor.GoBILDA.RPM_312));
+        m_frontRight = new MecanumMotor(new MotorEx(hardwareMap,DrivetrainConstants.FrontRightName, Motor.GoBILDA.RPM_312));
+        m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, DrivetrainConstants.BackLeftName, Motor.GoBILDA.RPM_312));
+        m_backRight = new MecanumMotor(new MotorEx(hardwareMap, DrivetrainConstants.BackRightName, Motor.GoBILDA.RPM_312));
+
+        m_backLeft.setInverted(true);
+        m_frontLeft.setInverted(true);
+
         // m_vision = new Vision(hardwareMap);
         m_imu = hardwareMap.get(IMU.class, "imu");
         m_imu.initialize(
@@ -98,7 +94,6 @@ public class MecanumDrivetrain extends SubsystemBase {
         setTranslationTolerance(DrivetrainConstants.TranslationToleranceMeters);
         m_angleRadiansPIDF.setTolerance(DrivetrainConstants.AnglePIDTolerance.getRadians());
 
-
         // We only need a timer object to call m_odometry.updateWithTime(), so the specific length doesn't matter, as long as it lasts longer than an FTC match.
         m_elapsedTime = new Timer(1200); // 20 minutes
         m_elapsedTime.start();
@@ -116,25 +111,32 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_backRight.setTargetVelocity(wheelSpeeds.rearRightMetersPerSecond);
     }
 
-    // positive x = away from you
-    // positive y = to your left
-    public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
-        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
+    // positive y = away from you
+    // positive x = to your right
+    public void moveFieldRelative(double vXPercent, double vYPercent, double omegaPercent) {
+        double vXMps = vXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double vYMps = vYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double omegaRps = omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
+        ChassisSpeeds speeds;
+
+        if(DriverStation.getInstance().alliance == Alliance.BLUE) {
+            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(vXMps, vYMps, omegaRps, getPose().getRotation().minus(new Rotation2d(Math.PI)));
+        } else {
+            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(vXMps, vYMps, omegaRps, getPose().getRotation());
+        }
+
         move(speeds);
     }
 
     @Override
     public void periodic() {
         updatePose();
+        tunePIDs();
 
         dashboardTelemetry.addData("robotPoseX", getPose().getX());
         dashboardTelemetry.addData("robotPoseY", getPose().getY());
         dashboardTelemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
         dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
-
-        dashboardTelemetry.update();
-
-        tunePIDs();
     }
 
     /**
@@ -160,10 +162,10 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-        double x = -UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
-        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
-        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1) * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond; // This may need to be altered to prevent overpowering the motors
-        moveFieldRelative(x, y, omegaRadiansPerSecond);
+        double xPercent = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1);
+        double yPercent = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1);
+        double omegaPercent = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getPose().getRotation().getRadians()), -1, 1);
+        moveFieldRelative(xPercent, yPercent, omegaPercent);
     }
 
     public boolean atTarget() {
@@ -182,7 +184,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_yPIDF.setTolerance(tolerance);
     }
 
-    // This function is used by the mechanumDrivetrain class itself to update its position on the field. It works by
+    // This function is used by the mecanumDrivetrain class itself to update its position on the field. It works by
     // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
     // It will use the odometry object to update the robot's postiion.
     private void updatePose() {
@@ -193,20 +195,23 @@ public class MecanumDrivetrain extends SubsystemBase {
             m_pose = visionPose;
             m_odometry.resetPosition(m_pose, getHeading());
         } else {
-            // Trick to reverse the odometry. Because I (Kenny) am lazy, I want us to have the field coordinates actually be driver relative, with x away and y to the left
             MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
-                    -m_frontLeft.getVelocity(), -m_frontRight.getVelocity(),
-                    -m_backLeft.getVelocity(), -m_backRight.getVelocity()
+                    m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
+                    m_backLeft.getVelocity(), m_backRight.getVelocity()
             );
 
-            m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+            m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getPose().getRotation(), wheelSpeeds);
         }
     }
 
-    public void resetHeading() {
+    public void reorient() {
         m_imu.resetYaw();
         m_pose.getRotation().times(0);
-        m_odometry.resetPosition(m_pose,getHeading());
+        m_odometry.resetPosition(m_pose, m_pose.getRotation());
+    }
+
+    public void resetPose(Pose2d newPose) {
+        m_pose = newPose;
     }
 
     private void tunePIDs() {

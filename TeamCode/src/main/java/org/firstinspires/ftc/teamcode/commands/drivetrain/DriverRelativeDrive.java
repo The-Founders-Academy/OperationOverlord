@@ -1,14 +1,10 @@
 package org.firstinspires.ftc.teamcode.commands.drivetrain;
 
 import com.arcrobotics.ftclib.command.CommandBase;
-import com.arcrobotics.ftclib.gamepad.GamepadEx;
 
 import org.firstinspires.ftc.teamcode.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.GamepadSubsystem;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
-import org.firstinspires.ftc.teamcode.utility.DriverStation;
-
-import java.util.function.Supplier;
 
 public class DriverRelativeDrive extends CommandBase {
     private GamepadSubsystem m_driver;
@@ -22,8 +18,9 @@ public class DriverRelativeDrive extends CommandBase {
 
     @Override
     public void execute() {
+        // Y is forward because the y axis points away from the driver station
         double leftRightMetersPerSecond = m_driver.getLeftX() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double forwardBackMetersPerSecond = -m_driver.getLeftY() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double forwardBackMetersPerSecond = m_driver.getLeftY() * Constants.DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
         double omegaRadiansPerSecond = m_driver.getRightX() * Constants.DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
         m_drivetrain.moveFieldRelative(forwardBackMetersPerSecond, leftRightMetersPerSecond, omegaRadiansPerSecond);
     }
