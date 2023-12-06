@@ -62,7 +62,7 @@ public class Teleop extends CommandOpMode {
 
     private void setupDriverStation() {
         DriverStation.getInstance().telemetry = telemetry;
-        if(DriverStation.getInstance().alliance == DriverStation.Alliance.NONE) DriverStation.getInstance().alliance = DriverStation.Alliance.BLUE;
+        if(DriverStation.getInstance().alliance == DriverStation.Alliance.NONE) DriverStation.getInstance().alliance = DriverStation.Alliance.RED;
 
     }
 }
