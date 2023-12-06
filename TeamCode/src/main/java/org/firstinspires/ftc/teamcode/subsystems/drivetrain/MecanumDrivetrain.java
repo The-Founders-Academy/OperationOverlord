@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
@@ -39,18 +40,8 @@ public class MecanumDrivetrain extends SubsystemBase {
     private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0, 0);
     private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0.05, 0, 0);
 
-    /*
-    A quick explanation:
-    This is what's called a ternary conditional operator. If the conditional statement in parenthesis is true, the variable takes on the first value after the question mark.
-    If it's not true, the variable takes on the second value after the question mark. This statement is a one-line version of an if-else that allows it to be placed
-    outside of a function.
+    private MultipleTelemetry multiTelemetry = new MultipleTelemetry(DriverStation.getInstance().telemetry, FtcDashboard.getInstance().getTelemetry());
 
-    This offset exists to make things easier in other parts of the code. Pressing forward on the joystick should always move the robot
-    away from the driver. However, because the blue and red alliances face each other on opposite sides of the field, blue's forward is rotated
-    180 degrees or PI radians from red's forward. Instead of having an if-else every time we use an angle to check which alliance we're on, we use an offset here.
-    If we are on the blue alliance, the offset can be zero as zero degrees is forward. If we're on the red alliance, we rotate all angles by 180
-    To ensure that the relative zero degrees is still forward for the driver.
-     */
 
     // private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
     public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap, String frontLeftName, String frontRightName, String backLeftName, String backRightName) {
@@ -130,6 +121,10 @@ public class MecanumDrivetrain extends SubsystemBase {
     @Override
     public void periodic() {
         updatePose();
+
+        multiTelemetry.addData("RobotPoseX", getPose().getX());
+        multiTelemetry.addData("RobotPoseY", getPose().getY());
+        multiTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
     }
 
     /**
@@ -182,7 +177,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_yPIDF.setTolerance(tolerance);
     }
 
-    // This function is used by the mechanumDrivetrain class itself to update its position on the field. It works by
+    // This function is used by the mecanumDrivetrain class itself to update its position on the field. It works by
     // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
     // It will use the odometry object to update the robot's postiion.
     private void updatePose() {
@@ -198,7 +193,9 @@ public class MecanumDrivetrain extends SubsystemBase {
                     m_backLeft.getVelocity(), m_backRight.getVelocity()
             );
 
-            m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+            // Our coordinate system is flipped (see above)
+            Pose2d m_falsePose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+            m_pose = new Pose2d(m_falsePose.getY(), m_falsePose.getX(), m_falsePose.getRotation());
         }
     }
 
