@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
@@ -43,7 +44,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
-    private Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
+    private MultipleTelemetry telemetry = new MultipleTelemetry(DriverStation.getInstance().telemetry, FtcDashboard.getInstance().getTelemetry());
 
     public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap) {
         // Initialize hardware
@@ -125,10 +126,10 @@ public class MecanumDrivetrain extends SubsystemBase {
     public void periodic() {
         updatePose();
 
-        dashboardTelemetry.addData("robotPoseX", getPose().getX());
-        dashboardTelemetry.addData("robotPoseY", getPose().getY());
-        dashboardTelemetry.addData("RobotPoseRotationRad", getPose().getRotation().getRadians());
-        dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
+        telemetry.addData("robotPoseX", getPose().getX());
+        telemetry.addData("robotPoseY", getPose().getY());
+        telemetry.addData("RobotPoseRotationRad", getPose().getRotation().getRadians());
+        telemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.opmodes;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.command.CommandOpMode;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
@@ -21,7 +22,8 @@ public class Teleop extends CommandOpMode {
     private GamepadSubsystem m_operator;
 
     private MecanumDrivetrain m_drivetrain;
-    private Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
+    private MultipleTelemetry multiTelemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
+
     private void driverControls() {
         m_drivetrain.setDefaultCommand(new DriverRelativeDrive(m_drivetrain, m_driver));
 
@@ -49,8 +51,7 @@ public class Teleop extends CommandOpMode {
     @Override
     public void run() {
         CommandScheduler.getInstance().run();
-        telemetry.update();
-        dashboardTelemetry.update();
+        multiTelemetry.update();
 
         AprilTagGameDatabase.getCurrentGameTagLibrary();
     }
