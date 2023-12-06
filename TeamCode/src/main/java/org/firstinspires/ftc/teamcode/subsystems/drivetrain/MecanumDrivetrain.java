@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems.drivetrain;
 
 import com.acmerobotics.dashboard.FtcDashboard;
+import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.arcrobotics.ftclib.command.SubsystemBase;
 import com.arcrobotics.ftclib.controller.PIDFController;
 import com.arcrobotics.ftclib.geometry.Pose2d;
@@ -39,7 +40,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0, 0);
     private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0.05, 0, 0);
 
-    private Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
+    private MultipleTelemetry multiTelemetry = new MultipleTelemetry(DriverStation.getInstance().telemetry, FtcDashboard.getInstance().getTelemetry());
 
 
     // private final Rotation2d m_angleOffset = (DriverStation.getInstance().alliance == DriverStation.Alliance.BLUE) ? Rotation2d.fromDegrees(0) : Rotation2d.fromDegrees(180);
@@ -121,9 +122,9 @@ public class MecanumDrivetrain extends SubsystemBase {
     public void periodic() {
         updatePose();
 
-        dashboardTelemetry.addData("RobotPoseX", getPose().getX());
-        dashboardTelemetry.addData("RobotPoseY", getPose().getY());
-        dashboardTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
+        multiTelemetry.addData("RobotPoseX", getPose().getX());
+        multiTelemetry.addData("RobotPoseY", getPose().getY());
+        multiTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
     }
 
     /**
@@ -176,7 +177,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_yPIDF.setTolerance(tolerance);
     }
 
-    // This function is used by the mechanumDrivetrain class itself to update its position on the field. It works by
+    // This function is used by the mecanumDrivetrain class itself to update its position on the field. It works by
     // first asking if the vision object can read an april tag. If so, it will use the position data provided by that april tag. Otherwise,
     // It will use the odometry object to update the robot's postiion.
     private void updatePose() {
@@ -192,7 +193,9 @@ public class MecanumDrivetrain extends SubsystemBase {
                     m_backLeft.getVelocity(), m_backRight.getVelocity()
             );
 
-            m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+            // Our coordinate system is flipped (see above)
+            Pose2d m_falsePose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+            m_pose = new Pose2d(m_falsePose.getY(), m_falsePose.getX(), m_falsePose.getRotation());
         }
     }
 
