@@ -110,7 +110,7 @@ public class MecanumDrivetrain extends SubsystemBase {
     // positive x = away from you
     // positive y = to your left
     public void moveFieldRelative(double velocityXPercent, double velocityYPercent, double omegaPercent) {
-        double velocityXMetersPerSecond = velocityXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double velocityXMetersPerSecond = -velocityXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
         double velocityYMetersPerSecond = velocityYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
         double omegaRadiansPerSecond = omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
 
@@ -121,10 +121,13 @@ public class MecanumDrivetrain extends SubsystemBase {
     @Override
     public void periodic() {
         updatePose();
+        tunePIDs();
 
         multiTelemetry.addData("RobotPoseX", getPose().getX());
         multiTelemetry.addData("RobotPoseY", getPose().getY());
         multiTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
+        multiTelemetry.addData("TargetX", m_xPIDF.getSetPoint());
+        multiTelemetry.addData("xP", m_xPIDF.getP());
     }
 
     /**
@@ -201,5 +204,11 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     public void resetHeading() {
         m_imu.resetYaw();
+    }
+
+    private void tunePIDs() {
+        m_xPIDF.setP(DrivetrainConstants.P);
+        m_xPIDF.setI(DrivetrainConstants.I);
+        m_xPIDF.setD(DrivetrainConstants.D);
     }
 }
