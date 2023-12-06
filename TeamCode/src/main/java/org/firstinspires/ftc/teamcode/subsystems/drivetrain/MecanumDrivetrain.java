@@ -33,8 +33,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
-    private Telemetry dashboardTelemetry = DriverStation.getInstance().telemetry;;
-
 
     // These values need to be tuned when we have access to the drivetrain.
     private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0, 0);
@@ -132,13 +130,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     @Override
     public void periodic() {
         updatePose();
-
-        dashboardTelemetry.addData("robotPoseX", getPose().getX());
-        dashboardTelemetry.addData("robotPoseY", getPose().getY());
-        dashboardTelemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
-        dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
-
-        dashboardTelemetry.update();
     }
 
     /**

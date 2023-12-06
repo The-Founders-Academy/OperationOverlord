@@ -27,7 +27,6 @@ public class Teleop extends CommandOpMode {
     private GamepadSubsystem m_operator;
 
     private MecanumDrivetrain m_drivetrain;
-    private Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
     private void driverControls() {
         m_drivetrain.setDefaultCommand(new DriverRelativeDrive(m_drivetrain, m_driver));
 
