@@ -14,7 +14,7 @@ public class MecanumMotor {
         m_motor.setZeroPowerBehavior(Motor.ZeroPowerBehavior.BRAKE);
         m_motor.encoder.setDistancePerPulse(Constants.DrivetrainConstants.DistancePerEncoderTick);
         m_motor.setRunMode(Motor.RunMode.VelocityControl);
-        m_motor.setVeloCoefficients(0.2, 0, 0);
+        m_motor.setVeloCoefficients(0.1, 0, 0);
     }
 
     public double getVelocity() {

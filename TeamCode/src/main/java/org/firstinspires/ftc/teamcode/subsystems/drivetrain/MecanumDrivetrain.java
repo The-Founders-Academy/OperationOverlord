@@ -195,7 +195,7 @@ public class MecanumDrivetrain extends SubsystemBase {
 
             // Our coordinate system is flipped (see above)
             Pose2d m_falsePose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
-            m_pose = new Pose2d(m_falsePose.getY(), m_falsePose.getX(), m_falsePose.getRotation());
+            m_pose = new Pose2d(-m_falsePose.getY(), m_falsePose.getX(), m_falsePose.getRotation());
         }
     }
 
