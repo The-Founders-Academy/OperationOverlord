@@ -125,7 +125,7 @@ public class MecanumDrivetrain extends SubsystemBase {
         double velocityYMetersPerSecond = velocityYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
         double omegaRadiansPerSecond = omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
 
-        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
+        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityYMetersPerSecond, velocityXMetersPerSecond, -omegaRadiansPerSecond, getHeading());
         move(speeds);
     }
 
