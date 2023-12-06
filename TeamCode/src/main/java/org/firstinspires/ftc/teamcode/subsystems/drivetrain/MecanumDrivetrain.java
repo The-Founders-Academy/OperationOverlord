@@ -22,6 +22,8 @@ import org.firstinspires.ftc.teamcode.Constants.DrivetrainConstants;
 import org.firstinspires.ftc.teamcode.UtilFunctions;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
 import org.firstinspires.ftc.teamcode.utility.DriverStation.Alliance;
+import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
+import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 
 // SMART DASHBOARD IP: 192.168.43.1:8080/dash
 public class MecanumDrivetrain extends SubsystemBase {
@@ -42,12 +44,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     private Timer m_elapsedTime;
     // private Vision m_vision;
     private Telemetry dashboardTelemetry = FtcDashboard.getInstance().getTelemetry();
-
-
-    // These values need to be tuned when we have access to the drivetrain.
-    private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0, 0);
-    private PIDFController m_yPIDF = new PIDFController(0.1, 0 ,0, 0);
-    private PIDFController m_angleRadiansPIDF = new PIDFController(0.1, 0.05, 0, 0);
 
     public MecanumDrivetrain(Pose2d initialPose, HardwareMap hardwareMap) {
         // Initialize hardware
@@ -90,9 +86,6 @@ public class MecanumDrivetrain extends SubsystemBase {
                 m_pose
         );
 
-        // Set PID error tolerances. If the error is less than the tolerance, the PID loop is considered finished
-        setTranslationTolerance(DrivetrainConstants.TranslationToleranceMeters);
-        m_angleRadiansPIDF.setTolerance(DrivetrainConstants.AnglePIDTolerance.getRadians());
 
         // We only need a timer object to call m_odometry.updateWithTime(), so the specific length doesn't matter, as long as it lasts longer than an FTC match.
         m_elapsedTime = new Timer(1200); // 20 minutes
@@ -113,16 +106,16 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     // positive y = away from you
     // positive x = to your right
-    public void moveFieldRelative(double vXPercent, double vYPercent, double omegaPercent) {
-        double vXMps = vXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double vYMps = vYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double omegaRps = omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
+    public void moveFieldRelative(double vForwardPercent, double vRightPercent, double omegaPercent) {
+        double vFwdMps = vForwardPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond * 0.3;
+        double vRtMps = vRightPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond * 0.3;
+        double omegaRps = -omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond * 0.2;
         ChassisSpeeds speeds;
 
         if(DriverStation.getInstance().alliance == Alliance.BLUE) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(vXMps, vYMps, omegaRps, getPose().getRotation().minus(new Rotation2d(Math.PI)));
+            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(vFwdMps, -vRtMps, omegaRps, getPose().getRotation().minus(new Rotation2d(Math.PI)));
         } else {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(vXMps, vYMps, omegaRps, getPose().getRotation());
+            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(vFwdMps, -vRtMps, omegaRps, getPose().getRotation());
         }
 
         move(speeds);
@@ -131,57 +124,21 @@ public class MecanumDrivetrain extends SubsystemBase {
     @Override
     public void periodic() {
         updatePose();
-        tunePIDs();
 
         dashboardTelemetry.addData("robotPoseX", getPose().getX());
         dashboardTelemetry.addData("robotPoseY", getPose().getY());
-        dashboardTelemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
+        dashboardTelemetry.addData("RobotPoseRotationRad", getPose().getRotation().getRadians());
         dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
     }
 
     /**
      * This function does not return the absolute rotational position of the robot. It only returns how far the robot has rotated since it started or the last
      * resetHeading() call.
-     * Boundaries: -360 deg or -PI rad to +360 deg or +PI rad
+     * Boundaries: -180 deg or -PI rad to +180 deg or +PI rad
      * @return The current heading of the robot
      */
     public Rotation2d getHeading() {
         return new Rotation2d(m_imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
-    }
-
-    public void setTarget(Pose2d target) {
-        m_xPIDF.setSetPoint(target.getX());
-        m_yPIDF.setSetPoint(target.getY());
-        m_angleRadiansPIDF.setSetPoint(target.getRotation().getRadians());
-    }
-
-    public void resetPIDs() {
-        m_xPIDF.reset();
-        m_yPIDF.reset();
-        m_angleRadiansPIDF.reset();
-    }
-
-    public void moveToTarget() {
-        double xPercent = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1);
-        double yPercent = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1);
-        double omegaPercent = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getPose().getRotation().getRadians()), -1, 1);
-        moveFieldRelative(xPercent, yPercent, omegaPercent);
-    }
-
-    public boolean atTarget() {
-        boolean atTranslation = (m_xPIDF.atSetPoint() && m_yPIDF.atSetPoint()); // True only if x and y are within tolerable distances from the set point
-        boolean atRotation = m_angleRadiansPIDF.atSetPoint();
-
-        if(atTranslation == true && atRotation == true) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public void setTranslationTolerance(double tolerance) {
-        m_xPIDF.setTolerance(tolerance);
-        m_yPIDF.setTolerance(tolerance);
     }
 
     // This function is used by the mecanumDrivetrain class itself to update its position on the field. It works by
@@ -200,7 +157,9 @@ public class MecanumDrivetrain extends SubsystemBase {
                     m_backLeft.getVelocity(), m_backRight.getVelocity()
             );
 
-            m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getPose().getRotation(), wheelSpeeds);
+            Pose2d tempPose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
+            Pose2d realPose = new Pose2d(-tempPose.getY(), tempPose.getX(), tempPose.getRotation());
+            m_pose = realPose;
         }
     }
 
@@ -214,9 +173,4 @@ public class MecanumDrivetrain extends SubsystemBase {
         m_pose = newPose;
     }
 
-    private void tunePIDs() {
-        m_xPIDF.setPIDF(DrivetrainConstants.XPIDF.p, DrivetrainConstants.XPIDF.i, DrivetrainConstants.XPIDF.d, DrivetrainConstants.XPIDF.f);
-        m_xPIDF.setPIDF(DrivetrainConstants.YPIDF.p, DrivetrainConstants.YPIDF.i, DrivetrainConstants.YPIDF.d, DrivetrainConstants.YPIDF.f);
-        m_xPIDF.setPIDF(DrivetrainConstants.AnglePIDF.p, DrivetrainConstants.AnglePIDF.i, DrivetrainConstants.AnglePIDF.d, DrivetrainConstants.AnglePIDF.f);
-    }
 }
