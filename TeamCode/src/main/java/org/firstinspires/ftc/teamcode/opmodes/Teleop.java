@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.opmodes;
 
+import com.acmerobotics.dashboard.FtcDashboard;
 import com.arcrobotics.ftclib.command.CommandOpMode;
 import com.arcrobotics.ftclib.command.CommandScheduler;
 import com.arcrobotics.ftclib.gamepad.GamepadEx;
@@ -8,6 +9,7 @@ import com.arcrobotics.ftclib.geometry.Pose2d;
 import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriveToPosition;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.ResetPose;
@@ -25,7 +27,6 @@ public class Teleop extends CommandOpMode {
     private GamepadSubsystem m_operator;
 
     private MecanumDrivetrain m_drivetrain;
-
     private void driverControls() {
         m_drivetrain.setDefaultCommand(new DriverRelativeDrive(m_drivetrain, m_driver));
 
@@ -55,11 +56,10 @@ public class Teleop extends CommandOpMode {
     @Override
     public void run() {
         CommandScheduler.getInstance().run();
-        telemetry.update();
     }
 
     private void setupDriverStation() {
         DriverStation.getInstance().telemetry = telemetry;
-        if(DriverStation.getInstance().alliance == DriverStation.Alliance.NONE) DriverStation.getInstance().alliance = DriverStation.Alliance.BLUE;
+        if(DriverStation.getInstance().alliance == DriverStation.Alliance.NONE) DriverStation.getInstance().alliance = DriverStation.Alliance.RED;
     }
 }

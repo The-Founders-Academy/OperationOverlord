@@ -33,8 +33,6 @@ public class MecanumDrivetrain extends SubsystemBase {
     private IMU m_imu;
     private Timer m_elapsedTime;
     // private Vision m_vision;
-    private Telemetry dashboardTelemetry = DriverStation.getInstance().telemetry;;
-
 
     // These values need to be tuned when we have access to the drivetrain.
     private PIDFController m_xPIDF = new PIDFController(0.1, 0, 0, 0);
@@ -60,10 +58,12 @@ public class MecanumDrivetrain extends SubsystemBase {
 
         m_frontLeft = new MecanumMotor(new MotorEx(hardwareMap, frontLeftName, Motor.GoBILDA.RPM_312));
         m_frontRight = new MecanumMotor(new MotorEx(hardwareMap, frontRightName, Motor.GoBILDA.RPM_312));
-        m_frontRight.setInverted(true);
         m_backLeft = new MecanumMotor(new MotorEx(hardwareMap, backLeftName, Motor.GoBILDA.RPM_312));
         m_backRight = new MecanumMotor(new MotorEx(hardwareMap, backRightName, Motor.GoBILDA.RPM_312));
-        m_backRight.setInverted(true);
+
+        m_backLeft.setInverted(true);
+        m_frontLeft.setInverted(true);
+
         // m_vision = new Vision(hardwareMap);
         m_imu = hardwareMap.get(IMU.class, "imu");
         m_imu.initialize(
@@ -118,21 +118,18 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     // positive x = away from you
     // positive y = to your left
-    public void moveFieldRelative(double velocityXMetersPerSecond, double velocityYMetersPerSecond, double omegaRadiansPerSecond) {
-        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityXMetersPerSecond, velocityYMetersPerSecond, omegaRadiansPerSecond, getHeading());
+    public void moveFieldRelative(double velocityXPercent, double velocityYPercent, double omegaPercent) {
+        double velocityXMetersPerSecond = velocityXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double velocityYMetersPerSecond = velocityYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
+        double omegaRadiansPerSecond = omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
+
+        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityYMetersPerSecond, velocityXMetersPerSecond, -omegaRadiansPerSecond, getHeading());
         move(speeds);
     }
 
     @Override
     public void periodic() {
         updatePose();
-
-        dashboardTelemetry.addData("robotPoseX", getPose().getX());
-        dashboardTelemetry.addData("robotPoseY", getPose().getY());
-        dashboardTelemetry.addData("RobotPoseRotationDegrees", getPose().getRotation().getDegrees());
-        dashboardTelemetry.addData("RobotHeadingDegrees", getHeading().getDegrees());
-
-        dashboardTelemetry.update();
     }
 
     /**
@@ -158,21 +155,26 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-        double x = -UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
-        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1) * DrivetrainConstants.MaxRobotSpeedMetersPerSecond; // This may need to be altered to prevent overpowering the motors
-        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getHeading().getRadians()), -1, 1) * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond; // This may need to be altered to prevent overpowering the motors
+        double x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1);
+        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1);
+        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getPose().getRotation().getRadians()), -1, 1);
         moveFieldRelative(x, y, omegaRadiansPerSecond);
     }
 
     public boolean atTarget() {
-        boolean atTranslation = (m_xPIDF.atSetPoint() && m_yPIDF.atSetPoint()); // True only if x and y are within tolerable distances from the set point
-        boolean atRotation = m_angleRadiansPIDF.atSetPoint();
-
-        if(atTranslation == true && atRotation == true) {
+        if(atTranslationTarget() && atRotationTarget()) {
             return true;
         } else {
             return false;
         }
+    }
+
+    private boolean atTranslationTarget() {
+        return (m_xPIDF.atSetPoint() && m_yPIDF.atSetPoint());
+    }
+
+    private boolean atRotationTarget() {
+        return m_angleRadiansPIDF.atSetPoint();
     }
 
     public void setTranslationTolerance(double tolerance) {
@@ -191,10 +193,9 @@ public class MecanumDrivetrain extends SubsystemBase {
             m_pose = visionPose;
             m_odometry.resetPosition(m_pose, getHeading());
         } else {
-            // Trick to reverse the odometry. Because I (Kenny) am lazy, I want us to have the field coordinates actually be driver relative, with x away and y to the left
             MecanumDriveWheelSpeeds wheelSpeeds = new MecanumDriveWheelSpeeds(
-                    -m_frontLeft.getVelocity(), -m_frontRight.getVelocity(),
-                    -m_backLeft.getVelocity(), -m_backRight.getVelocity()
+                    m_frontLeft.getVelocity(), m_frontRight.getVelocity(),
+                    m_backLeft.getVelocity(), m_backRight.getVelocity()
             );
 
             m_pose = m_odometry.updateWithTime(m_elapsedTime.elapsedTime(), getHeading(), wheelSpeeds);
@@ -203,7 +204,5 @@ public class MecanumDrivetrain extends SubsystemBase {
 
     public void resetHeading() {
         m_imu.resetYaw();
-        m_pose.getRotation().times(0);
-        m_odometry.resetPosition(m_pose,getHeading());
     }
 }
