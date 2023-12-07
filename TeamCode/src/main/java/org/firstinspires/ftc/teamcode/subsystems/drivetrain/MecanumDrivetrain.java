@@ -112,9 +112,9 @@ public class MecanumDrivetrain extends SubsystemBase {
     public void moveFieldRelative(double velocityXPercent, double velocityYPercent, double omegaPercent) {
         double velocityXMetersPerSecond = -velocityXPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
         double velocityYMetersPerSecond = velocityYPercent * DrivetrainConstants.MaxRobotSpeedMetersPerSecond;
-        double omegaRadiansPerSecond = omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
+        double omegaRadiansPerSecond = -omegaPercent * DrivetrainConstants.MaxAngularVeloityRadiansPerSecond;
 
-        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityYMetersPerSecond, velocityXMetersPerSecond, -omegaRadiansPerSecond, getHeading());
+        ChassisSpeeds speeds = ChassisSpeeds.fromFieldRelativeSpeeds(velocityYMetersPerSecond, velocityXMetersPerSecond, omegaRadiansPerSecond, getHeading());
         move(speeds);
     }
 
@@ -127,7 +127,8 @@ public class MecanumDrivetrain extends SubsystemBase {
         multiTelemetry.addData("RobotPoseY", getPose().getY());
         multiTelemetry.addData("RobotAngleRad", getPose().getRotation().getRadians());
         multiTelemetry.addData("TargetX", m_xPIDF.getSetPoint());
-        multiTelemetry.addData("xP", m_xPIDF.getP());
+        multiTelemetry.addData("TargetY", m_yPIDF.getSetPoint());
+        multiTelemetry.addData(("TargetAngleRad"), m_angleRadiansPIDF.getSetPoint());
     }
 
     /**
@@ -153,10 +154,20 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     public void moveToTarget() {
-        double x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1);
-        double y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1);
-        double omegaRadiansPerSecond = UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getPose().getRotation().getRadians()), -1, 1);
-        moveFieldRelative(x, y, omegaRadiansPerSecond);
+        double x = 0;
+        double y = 0;
+        double omegaPercent = 0;
+        if(atTranslationTarget() == false) {
+            x = UtilFunctions.clamp(m_xPIDF.calculate(getPose().getX()), -1, 1);
+            y = UtilFunctions.clamp(m_yPIDF.calculate(getPose().getY()), -1, 1);
+        }
+
+        if(atRotationTarget() == false) {
+            // negative for some reason (check ?)
+            omegaPercent = -UtilFunctions.clamp(m_angleRadiansPIDF.calculate(getPose().getRotation().getRadians()), -1, 1);
+        }
+
+        moveFieldRelative(x, y, omegaPercent);
     }
 
     public boolean atTarget() {
@@ -207,8 +218,20 @@ public class MecanumDrivetrain extends SubsystemBase {
     }
 
     private void tunePIDs() {
-        m_xPIDF.setP(DrivetrainConstants.P);
-        m_xPIDF.setI(DrivetrainConstants.I);
-        m_xPIDF.setD(DrivetrainConstants.D);
+        m_xPIDF.setP(DrivetrainConstants.xCoefficients.p);
+        m_xPIDF.setI(DrivetrainConstants.xCoefficients.i);
+        m_xPIDF.setD(DrivetrainConstants.xCoefficients.d);
+        m_xPIDF.setF(DrivetrainConstants.xCoefficients.f);
+
+        m_yPIDF.setP(DrivetrainConstants.yCoefficients.p);
+        m_yPIDF.setI(DrivetrainConstants.yCoefficients.i);
+        m_yPIDF.setD(DrivetrainConstants.yCoefficients.d);
+        m_yPIDF.setF(DrivetrainConstants.yCoefficients.f);
+
+        m_angleRadiansPIDF.setP(DrivetrainConstants.AngleCoefficients.p);
+        m_angleRadiansPIDF.setI(DrivetrainConstants.AngleCoefficients.i);
+        m_angleRadiansPIDF.setD(DrivetrainConstants.AngleCoefficients.d);
+        m_angleRadiansPIDF.setF(DrivetrainConstants.AngleCoefficients.f);
+
     }
 }
