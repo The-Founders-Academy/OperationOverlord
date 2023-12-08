@@ -25,6 +25,6 @@ public class DriverRelativeDrive extends CommandBase {
         double horizontalPercent = m_driver.getLeftX();
         double verticalPercent = m_driver.getLeftY();
         double omegaPercent = m_driver.getRightX() * 0.5;
-        m_drivetrain.moveFieldRelative(-horizontalPercent, verticalPercent, omegaPercent);
+        m_drivetrain.moveFieldRelative(horizontalPercent, verticalPercent, omegaPercent);
     }
 }

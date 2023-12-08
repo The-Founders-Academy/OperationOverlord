@@ -2,8 +2,11 @@ package org.firstinspires.ftc.teamcode.commands.drivetrain;
 
 import com.arcrobotics.ftclib.command.CommandBase;
 import com.arcrobotics.ftclib.geometry.Pose2d;
+import com.arcrobotics.ftclib.geometry.Rotation2d;
 
+import org.firstinspires.ftc.teamcode.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
+import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
 
 public class DriveToPosition extends CommandBase {
     private MecanumDrivetrain m_drivetrain;
@@ -20,7 +23,7 @@ public class DriveToPosition extends CommandBase {
 
     @Override
     public void initialize() {
-        m_drivetrain.setTarget(m_targetPose);
+        m_drivetrain.setTarget(new Pose2d(Constants.DrivetrainConstants.TestX, Constants.DrivetrainConstants.TestY, Rotation2d.fromDegrees(Constants.DrivetrainConstants.TestDegrees)));
         m_drivetrain.setTranslationTolerance(m_translationTolerance);
     }
 
