@@ -38,4 +38,8 @@ public class Constants {
         public static double TestDegrees = 0;
     }
 
+    public static class ArmConstants {
+        public static String ExtenderLeftName = "eL";
+        public static String ExtenderRightName = "eR";
+    }
 }

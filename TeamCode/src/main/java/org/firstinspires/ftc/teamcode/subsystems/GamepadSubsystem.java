@@ -72,4 +72,12 @@ public class GamepadSubsystem extends SubsystemBase {
     public double rightTrigger() {
         return m_gamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER);
     }
+
+    public GamepadButton bumperLeft() {
+        return m_gamepad.getGamepadButton(GamepadKeys.Button.LEFT_BUMPER);
+    }
+
+    public GamepadButton bumperRight() {
+        return m_gamepad.getGamepadButton(GamepadKeys.Button.RIGHT_BUMPER);
+    }
 }

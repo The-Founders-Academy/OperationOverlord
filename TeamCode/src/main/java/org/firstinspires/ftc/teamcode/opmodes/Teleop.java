@@ -9,11 +9,15 @@ import com.arcrobotics.ftclib.geometry.Pose2d;
 import com.arcrobotics.ftclib.geometry.Rotation2d;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+import org.firstinspires.ftc.teamcode.commands.arm.ExtendLift;
+import org.firstinspires.ftc.teamcode.commands.arm.Grip;
+import org.firstinspires.ftc.teamcode.commands.arm.Release;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriveToPosition;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.DriverRelativeDrive;
 import org.firstinspires.ftc.teamcode.commands.drivetrain.ResetPose;
 import org.firstinspires.ftc.teamcode.subsystems.GamepadSubsystem;
-import org.firstinspires.ftc.teamcode.subsystems.arm.Arm;
+import org.firstinspires.ftc.teamcode.subsystems.arm.Claw;
+import org.firstinspires.ftc.teamcode.subsystems.arm.Extender;
 import org.firstinspires.ftc.teamcode.subsystems.drivetrain.MecanumDrivetrain;
 import org.firstinspires.ftc.teamcode.utility.DriverStation;
 
@@ -24,7 +28,8 @@ public class Teleop extends CommandOpMode {
     private GamepadSubsystem m_operator;
 
     private MecanumDrivetrain m_drivetrain;
-    private Arm m_arm;
+    private Extender m_extender;
+    private Claw m_claw;
 
     private MultipleTelemetry multiTelemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
     private void driverControls() {
@@ -33,25 +38,38 @@ public class Teleop extends CommandOpMode {
         // When the driver presses the A button, drive forward 1 meter. We can use this to test odometry.
         m_driver.buttonA().whenPressed(new DriveToPosition(m_drivetrain, new Pose2d(1, 0, new Rotation2d(0)), 0.03));
         m_driver.buttonB().whenPressed(new ResetPose(m_drivetrain));
-        // Score
+
+        m_driver.bumperLeft().whenPressed(new Release(m_claw));
+        m_driver.bumperRight().whenPressed(new Grip(m_claw));
         // Shoot airplane
     }
 
     private void operatorControls() {
-        // Move arm to pose
+        m_operator.setDefaultCommand(new ExtendLift(m_extender, m_operator));
         // Intake
     }
 
     @Override
     public void initialize() {
-        setupDriverStation();
+        setupDriverStation(); // This should always be called first
 
+        // Controllers
         m_driver = new GamepadSubsystem(new GamepadEx(gamepad1));
         m_operator = new GamepadSubsystem(new GamepadEx(gamepad2));
-        m_arm = new Arm(hardwareMap, "leftExtender", "rightExtender");
-        m_drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
-        driverControls();
 
+        // Arm subsystems
+        m_extender = new Extender();
+        m_claw = new Claw("leftClaw", "rightClaw");
+
+        // Drivetrain subsystems
+        m_drivetrain = new MecanumDrivetrain(null, hardwareMap, "fL", "fR", "bL", "bR");
+
+        // Initialize subsystems that need to be initialized
+        m_claw.initialize();
+
+        // These always get called last
+        driverControls();
+        operatorControls();
 
     }
 
@@ -63,6 +81,7 @@ public class Teleop extends CommandOpMode {
 
     private void setupDriverStation() {
         DriverStation.getInstance().telemetry = telemetry;
+        DriverStation.getInstance().setHardwareMap(hardwareMap);
         if(DriverStation.getInstance().alliance == DriverStation.Alliance.NONE) DriverStation.getInstance().alliance = DriverStation.Alliance.RED;
     }
 }
